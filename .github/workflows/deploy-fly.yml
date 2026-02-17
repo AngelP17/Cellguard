@@ -4,34 +4,45 @@ on:
   workflow_run:
     workflows: ["Gate Proof (Local Stack)"]
     types: [completed]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
   deploy:
     name: Deploy to Fly.io
-    if: ${{ (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success') && secrets.FLY_API_TOKEN != '' }}
     runs-on: ubuntu-latest
+    # Only run if Gate Proof passed and we have the token
+    if: |
+      github.event_name == 'workflow_dispatch' || 
+      (github.event.workflow_run.conclusion == 'success' && 
+       github.repository == 'AngelP17/Cellguard')
     concurrency:
       group: deploy
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check for Fly token
+        id: check-token
+        run: |
+          if [ -n "${{ secrets.FLY_API_TOKEN }}" ]; then
+            echo "has_token=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_token=false" >> $GITHUB_OUTPUT
+            echo "⚠️ FLY_API_TOKEN not set. Skipping deployment."
+          fi
+
       - name: Setup Fly
+        if: steps.check-token.outputs.has_token == 'true'
         uses: superfly/flyctl-actions/setup-flyctl@master
 
       - name: Deploy to Fly.io
+        if: steps.check-token.outputs.has_token == 'true'
         run: flyctl deploy --remote-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
-  deploy-skipped:
-    name: Deploy Skipped (Missing Token or Gate Proof Failure)
-    if: ${{ !((github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success') && secrets.FLY_API_TOKEN != '') }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Explain skip
+      - name: Skip notice
+        if: steps.check-token.outputs.has_token == 'false'
         run: |
-          echo "Deploy skipped."
-          echo "Requirements:"
-          echo "1) Gate Proof workflow must be successful (unless manual dispatch)."
-          echo "2) GitHub secret FLY_API_TOKEN must be set."
+          echo "✓ Deploy workflow completed (skipped - no token)."
+          echo "To enable deployment, add FLY_API_TOKEN to GitHub secrets."
