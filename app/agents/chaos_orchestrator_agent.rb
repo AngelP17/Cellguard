@@ -41,10 +41,26 @@ module Agents
       results = {
         decision: :noop,
         reason: nil,
-        drill: nil
+        reasons: [],
+        drill: nil,
+        guardrails: {}
       }
 
-      return results unless should_run_drill?
+      guardrails = guardrail_assessment
+      results[:guardrails] = guardrails.except(:allowed, :reasons)
+
+      unless guardrails[:allowed]
+        results[:decision] = :skipped
+        results[:reason] = guardrails[:reasons].first
+        results[:reasons] = guardrails[:reasons]
+
+        record_action!(:drill_skipped, {
+          reasons: guardrails[:reasons],
+          guardrails: results[:guardrails]
+        })
+
+        return results
+      end
 
       # Determine drill type based on system state
       drill = select_drill_type
@@ -52,6 +68,13 @@ module Agents
       if drill.nil?
         results[:decision] = :skip
         results[:reason] = "No suitable drill type for current state"
+        results[:reasons] = [results[:reason]]
+
+        record_action!(:drill_skipped, {
+          reasons: results[:reasons],
+          guardrails: results[:guardrails]
+        })
+
         return results
       end
 
@@ -89,26 +112,25 @@ module Agents
 
     private
 
-    def should_run_drill?
-      # Don't run if disabled
-      return false unless self.class.enabled?
-      
-      # Don't run if budget is exhausted (system is already stressed)
-      return false unless budget&.release_gate_open?
-      
-      # Don't run if budget is critically low (< 20%)
-      return false if budget&.budget_remaining.to_f < 0.2
-      
-      # Don't run outside business hours
-      return false unless business_hours?
-      
-      # Check minimum interval since last drill
-      return false if recent_drill_exists?
-      
-      # Check recent incidents (don't chaos during incident recovery)
-      return false if recent_incident_exists?
-      
-      true
+    def guardrail_assessment
+      checks = {
+        enabled: self.class.enabled?,
+        gate_open: budget&.release_gate_open?,
+        budget_safe: budget&.budget_remaining.to_f >= 0.2,
+        business_hours: business_hours?,
+        interval_ok: !recent_drill_exists?,
+        incident_window_clear: !recent_incident_exists?
+      }
+
+      reasons = []
+      reasons << "Agent is disabled." unless checks[:enabled]
+      reasons << "Release gate is locked; skipping chaos drill." unless checks[:gate_open]
+      reasons << "Budget remaining below 20%; drill suppressed for safety." unless checks[:budget_safe]
+      reasons << "Outside business hours (09:00-18:00); drill deferred." unless checks[:business_hours]
+      reasons << "Minimum chaos interval has not elapsed yet." unless checks[:interval_ok]
+      reasons << "Recent active incident detected; drill paused." unless checks[:incident_window_clear]
+
+      checks.merge(allowed: reasons.empty?, reasons: reasons)
     end
 
     def recent_drill_exists?

@@ -5,6 +5,8 @@ module Ui
   # Shows which agents are running, what actions they've taken,
   # and provides manual trigger controls
   class AgentActivityComponent < ViewComponent::Base
+    include HeroiconsHelper
+
     def initialize(agents:, recent_activity:)
       @agents = agents
       @recent_activity = recent_activity
@@ -21,13 +23,13 @@ module Ui
     def execution_status_icon(status)
       case status
       when "completed"
-        "✓"
+        heroicon("check-circle", classes: "w-4 h-4")
       when "failed"
-        "✗"
+        heroicon("x-circle", classes: "w-4 h-4")
       when "running"
-        "⟳"
+        heroicon("arrow-path", classes: "w-4 h-4")
       else
-        "○"
+        heroicon("clock", classes: "w-4 h-4")
       end
     end
 
@@ -42,6 +44,28 @@ module Ui
       else
         "text-neutral-400"
       end
+    end
+
+    def toggle_button_label(enabled)
+      enabled ? "Disable" : "Enable"
+    end
+
+    def toggle_button_classes(enabled)
+      base = "cg-btn cg-btn--toggle"
+      enabled ? "#{base} is-enabled" : base
+    end
+
+    def run_button_label(enabled)
+      enabled ? "Run" : "Enable first"
+    end
+
+    def run_button_classes(enabled)
+      base = "cg-btn cg-btn--run"
+      enabled ? base : "#{base} is-disabled"
+    end
+
+    def refresh_button_classes
+      "cg-btn cg-btn--secondary"
     end
 
     def format_time_ago(time)

@@ -6,15 +6,18 @@ class DashboardController < ApplicationController
     BudgetEvaluator.new.evaluate!(shard: @shard) if @budget.evaluated_at.nil? || @budget.evaluated_at < 2.minutes.ago
     @budget.reload
 
+    # Run agents automatically on dashboard load (if enabled)
+    run_autonomous_agents
+
     @incidents = @shard.incidents.order(created_at: :desc).limit(10)
     @audit_logs = @shard.audit_logs.order(created_at: :desc).limit(10)
 
     # Agent system data
     @agent_status = AgentConfig.agents
     @agent_activity = AgentScheduler.recent_activity(limit: 10)
-
-    # Run agents automatically on dashboard load (if enabled)
-    run_autonomous_agents
+    snapshot = SreScorecardService.new(shard: @shard).snapshot
+    @sre_scorecards = snapshot[:scorecards]
+    @chaos_insight = snapshot[:chaos_insight]
   end
 
   private

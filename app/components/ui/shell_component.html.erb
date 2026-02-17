@@ -1,20 +1,27 @@
-<div class="min-h-screen bg-neutral-950 text-neutral-100">
+<div class="min-h-screen cg-shell text-neutral-100">
   <div class="mx-auto max-w-6xl px-6 py-10">
-    <div class="mb-8 flex items-center justify-between gap-6">
+    <header class="cg-shell-header mb-8">
       <div>
-        <div class="text-xs tracking-widest text-neutral-500">CELLGUARD CONTROL PLANE</div>
+        <div class="cg-shell-eyebrow text-xs tracking-widest text-neutral-500">CELLGUARD CONTROL PLANE</div>
         <h1 class="mt-2 text-3xl font-semibold"><%= @title %></h1>
         <% if @subtitle.present? %>
           <div class="mt-2 text-sm text-neutral-400"><%= @subtitle %></div>
         <% end %>
       </div>
 
-      <div class="flex items-center gap-3">
-        <a href="/dashboard" class="rounded-xl border border-neutral-800 px-4 py-2 text-sm hover:bg-neutral-900">Dashboard</a>
-        <a href="/incidents" class="rounded-xl border border-neutral-800 px-4 py-2 text-sm hover:bg-neutral-900">Incidents</a>
-        <a href="/runbooks/gameday" class="rounded-xl border border-neutral-800 px-4 py-2 text-sm hover:bg-neutral-900">Runbooks</a>
-      </div>
-    </div>
+      <nav class="cg-top-nav" aria-label="Primary">
+        <% nav_items.each do |item| %>
+          <a
+            href="<%= item[:href] %>"
+            class="<%= nav_link_classes(item[:active]) %>"
+            <% if item[:active] %>aria-current="page"<% end %>
+          >
+            <%= heroicon(item[:icon], classes: "cg-top-nav__icon") %>
+            <span><%= item[:label] %></span>
+          </a>
+        <% end %>
+      </nav>
+    </header>
 
     <%= content %>
 

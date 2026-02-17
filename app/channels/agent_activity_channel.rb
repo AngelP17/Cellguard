@@ -25,6 +25,8 @@ class AgentActivityChannel < ApplicationCable::Channel
 
     result = AgentScheduler.run_agent_on_shard(agent_name, shard_name)
 
+    broadcast_status_update!
+
     transmit({
       type: "agent_triggered",
       agent: agent_name,
@@ -42,20 +44,32 @@ class AgentActivityChannel < ApplicationCable::Channel
   # Toggle agent enable/disable
   def toggle_agent(data)
     agent_name = data["agent"]
-    enabled = data["enabled"]
+    enabled = ActiveModel::Type::Boolean.new.cast(data["enabled"])
 
     AgentConfig.toggle!(agent_name, enabled)
 
-    transmit({
+    ActionCable.server.broadcast("agent_activity", {
       type: "agent_toggled",
       agent: agent_name,
       enabled: enabled
     })
+
+    broadcast_status_update!
   end
 
   # Request current status
   def request_status
     transmit({
+      type: "status_update",
+      status: AgentScheduler.status,
+      recent_activity: AgentScheduler.recent_activity(limit: 10)
+    })
+  end
+
+  private
+
+  def broadcast_status_update!
+    ActionCable.server.broadcast("agent_activity", {
       type: "status_update",
       status: AgentScheduler.status,
       recent_activity: AgentScheduler.recent_activity(limit: 10)

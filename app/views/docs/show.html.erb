@@ -1,6 +1,12 @@
 <%= render Ui::ShellComponent.new(title: @title, subtitle: "Docs are part of the product surface (runbooks + postmortems).") do %>
   <div class="rounded-2xl border border-neutral-900 bg-neutral-950/60 px-6 py-6">
-    <article class="prose prose-invert max-w-none">
+    <div class="cg-doc-actions mb-4">
+      <a href="/dashboard#game-day" class="cg-btn cg-btn--primary">Run Game Day</a>
+      <a href="/dashboard" class="cg-btn cg-btn--secondary">Dashboard</a>
+      <a href="/incidents" class="cg-btn cg-btn--secondary">Incidents</a>
+    </div>
+
+    <article class="prose prose-invert max-w-none cg-doc-article">
       <%= @html %>
     </article>
   </div>

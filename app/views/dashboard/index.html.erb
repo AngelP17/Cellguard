@@ -13,6 +13,37 @@
       budget_remaining: @budget.budget_remaining.to_f
     ) %>
 
+    <%# SRE Scorecards %>
+    <div class="grid gap-4 md:grid-cols-3">
+      <article class="cg-scorecard">
+        <div class="cg-scorecard__label">Chaos Drill Success (30d)</div>
+        <div class="cg-scorecard__value"><%= @sre_scorecards.dig(:chaos, :success_rate_label) %></div>
+        <div class="cg-scorecard__meta">
+          <%= @sre_scorecards.dig(:chaos, :successful) %> successful /
+          <%= @sre_scorecards.dig(:chaos, :executed) %> executed
+        </div>
+        <div class="cg-scorecard__meta">
+          <%= @sre_scorecards.dig(:chaos, :skipped) %> skipped •
+          <%= @sre_scorecards.dig(:chaos, :recommended) %> recommended
+        </div>
+      </article>
+
+      <article class="cg-scorecard">
+        <div class="cg-scorecard__label">MTTR (Resolved Incidents, 30d)</div>
+        <div class="cg-scorecard__value"><%= @sre_scorecards.dig(:mttr, :label) %></div>
+        <div class="cg-scorecard__meta">
+          <%= @sre_scorecards.dig(:mttr, :resolved_count) %> incidents resolved in lookback window
+        </div>
+      </article>
+
+      <article class="cg-scorecard">
+        <div class="cg-scorecard__label">Gate-Lock Frequency Trend (7d)</div>
+        <div class="cg-scorecard__value"><%= @sre_scorecards.dig(:gate_locks, :recent_total) %></div>
+        <div class="cg-scorecard__meta"><%= @sre_scorecards.dig(:gate_locks, :trend_label) %></div>
+        <div class="cg-scorecard__sparkline"><%= @sre_scorecards.dig(:gate_locks, :sparkline) %></div>
+      </article>
+    </div>
+
     <%# Agent Activity - The WOW Factor %>
     <div class="rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-950/20 to-neutral-950/60 px-6 py-6">
       <div class="flex items-center gap-3 mb-4">
@@ -61,7 +92,11 @@
         <div class="text-sm font-semibold">Chaos Engineering</div>
         <div class="mt-1 text-xs text-neutral-400">Game Day fault injection (SRE-grade proof)</div>
         <div class="mt-4">
-          <%= render Ui::ChaosGamedayComponent.new(shard: @shard.name, default_duration: 20) %>
+          <%= render Ui::ChaosGamedayComponent.new(
+            shard: @shard.name,
+            default_duration: 20,
+            chaos_insight: @chaos_insight
+          ) %>
         </div>
       </div>
     </div>

@@ -4,27 +4,85 @@
 ) do %>
 
   <div class="rounded-2xl border border-neutral-900 bg-neutral-950/60 px-6 py-6">
+    <div class="mb-4 flex items-center justify-between gap-4">
+      <div class="text-sm text-neutral-400">
+        Incident feed includes classifier signal, severity assessment, and suggested runbooks.
+      </div>
+      <a href="/dashboard" class="cg-btn cg-btn--secondary">Open Dashboard</a>
+    </div>
+
     <div class="space-y-3">
-      <% @incidents.each do |i| %>
-        <div class="rounded-xl border border-neutral-900 px-4 py-4">
+      <% @incidents.each do |incident| %>
+        <% context = incident.context || {} %>
+        <% classifier = context["classifier"] || {} %>
+        <% suggested_runbooks = Array(context["suggested_runbooks"]) %>
+        <% severity = context.dig("severity_assessment", "level").presence || incident.severity_label %>
+        <% response_sla = context.dig("severity_assessment", "response_time_sla") %>
+        <% likely_cause = Array(context["likely_causes"]).first&.dig("description") %>
+
+        <article class="rounded-xl border border-neutral-900 px-4 py-4">
           <div class="flex items-start justify-between gap-4">
             <div>
-              <div class="text-sm font-semibold"><%= i.title %></div>
+              <div class="text-sm font-semibold"><%= incident.title %></div>
               <div class="mt-1 text-xs text-neutral-400">
-                <%= i.severity_label %> • <%= i.team_label %> • <%= i.service_label %> • <%= i.status %>
+                Severity: <span class="text-neutral-200"><%= severity %></span> •
+                Team: <span class="text-neutral-200"><%= incident.team_label %></span> •
+                Service: <span class="text-neutral-200"><%= incident.service_label %></span> •
+                Status: <span class="text-neutral-200"><%= incident.status %></span>
               </div>
+              <% if response_sla.present? %>
+                <div class="mt-1 text-xs text-neutral-500">
+                  Response SLA: <span class="text-neutral-300"><%= response_sla %></span>
+                </div>
+              <% end %>
             </div>
-            <div class="text-xs text-neutral-500"><%= i.created_at %></div>
+            <div class="text-xs text-neutral-500 whitespace-nowrap"><%= incident.created_at.utc.strftime("%Y-%m-%d %H:%M:%S UTC") %></div>
           </div>
 
-          <% if i.context.present? %>
-            <pre class="mt-4 overflow-auto rounded-xl bg-neutral-950/60 p-3 text-xs text-neutral-300 border border-neutral-900"><%= JSON.pretty_generate(i.context) rescue i.context.to_json %></pre>
+          <div class="mt-3 grid gap-3 md:grid-cols-2">
+            <div class="rounded border border-neutral-900 bg-neutral-950/40 px-3 py-2">
+              <div class="text-xs text-neutral-500 uppercase tracking-wider">Classifier</div>
+              <div class="mt-1 text-sm text-neutral-200">
+                <%= classifier["reason"].presence || "No classifier reason captured" %>
+              </div>
+              <% if classifier["action"].present? %>
+                <div class="mt-1 text-xs text-neutral-500">Action: <span class="text-neutral-300"><%= classifier["action"] %></span></div>
+              <% end %>
+            </div>
+
+            <div class="rounded border border-neutral-900 bg-neutral-950/40 px-3 py-2">
+              <div class="text-xs text-neutral-500 uppercase tracking-wider">Likely Cause</div>
+              <div class="mt-1 text-sm text-neutral-200">
+                <%= likely_cause.presence || "No likely-cause insight available yet." %>
+              </div>
+            </div>
+          </div>
+
+          <% if suggested_runbooks.any? %>
+            <div class="mt-3 flex flex-wrap gap-2">
+              <% suggested_runbooks.first(3).each do |runbook| %>
+                <% slug = runbook["slug"].to_s %>
+                <% title = runbook["title"].presence || slug.humanize %>
+                <a href="/runbooks/<%= slug %>" class="cg-chip">
+                  <%= title %>
+                </a>
+              <% end %>
+            </div>
           <% end %>
-        </div>
+
+          <% if context.present? %>
+            <details class="mt-3">
+              <summary class="text-xs text-neutral-400 cursor-pointer">Raw incident context</summary>
+              <pre class="mt-2 overflow-auto rounded-xl bg-neutral-950/60 p-3 text-xs text-neutral-300 border border-neutral-900"><%= JSON.pretty_generate(context) rescue context.to_json %></pre>
+            </details>
+          <% end %>
+        </article>
       <% end %>
 
       <% if @incidents.empty? %>
-        <div class="text-sm text-neutral-500">No incidents recorded yet.</div>
+        <div class="rounded-xl border border-neutral-900 bg-neutral-950/40 px-4 py-6 text-sm text-neutral-500">
+          No incidents recorded yet. Run <code class="text-neutral-200">make gameday</code> to generate a full incident + gate lock cycle.
+        </div>
       <% end %>
     </div>
   </div>

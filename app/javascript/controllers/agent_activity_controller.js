@@ -39,6 +39,10 @@ export default class extends Controller {
         this.updateAgents(data.agents)
         this.updateActivity(data.recent_activity)
         break
+      case "agent_toggled":
+        this.showNotification(`${data.agent} ${data.enabled ? "enabled" : "disabled"}`)
+        this.refresh()
+        break
       case "agent_triggered":
         this.showNotification(`${data.agent} triggered on ${data.shard}`)
         break
@@ -59,25 +63,36 @@ export default class extends Controller {
     }
   }
 
-  triggerAgent(event) {
+  async triggerAgent(event) {
     const button = event.currentTarget
     if (!button) {
       return
     }
 
     const agentName = button.dataset.agentName
+    const enabledByServer = button.dataset.enabled !== "false"
+    if (!enabledByServer) {
+      this.showNotification(`${agentName} is disabled`, "error")
+      return
+    }
     
-    if (this.channel) {
-      this.channel.perform("trigger_agent", {
-        agent: agentName,
-        shard: "shard-default"
-      })
+    try {
+      if (this.channel) {
+        this.channel.perform("trigger_agent", {
+          agent: agentName,
+          shard: "shard-default"
+        })
+      } else {
+        await this.runViaHttp(agentName)
+      }
+    } catch (error) {
+      this.showNotification(`Run failed: ${error.message}`, "error")
+      return
     }
 
     // Optimistic UI update
-    const previousLabel = button.textContent
-    button.disabled = true
-    button.textContent = "Running..."
+    const previousLabel = button.textContent || "Run"
+    this.setButtonBusy(button, true, "Running...")
     
     setTimeout(() => {
       if (!button.isConnected) {
@@ -85,16 +100,58 @@ export default class extends Controller {
       }
 
       // Respect server-driven enabled/disabled state if available
-      const enabledByServer = button.dataset.enabled !== "false"
-      button.disabled = !enabledByServer
-      button.textContent = previousLabel || "Run"
+      const stillEnabled = button.dataset.enabled !== "false"
+      button.disabled = !stillEnabled
+      button.textContent = stillEnabled ? previousLabel : "Enable first"
+      button.className = this.runButtonClasses(stillEnabled)
     }, 2000)
+  }
+
+  async toggleAgent(event) {
+    const button = event.currentTarget
+    if (!button) {
+      return
+    }
+
+    const agentName = button.dataset.agentName
+    const currentlyEnabled = button.dataset.enabled === "true"
+    const nextEnabled = !currentlyEnabled
+
+    this.setButtonBusy(button, true, nextEnabled ? "Enabling..." : "Disabling...")
+
+    try {
+      if (this.channel) {
+        this.channel.perform("toggle_agent", {
+          agent: agentName,
+          enabled: nextEnabled
+        })
+      } else {
+        await this.toggleViaHttp(agentName, nextEnabled)
+        this.refresh()
+      }
+    } catch (error) {
+      this.showNotification(`Toggle failed: ${error.message}`, "error")
+      this.refresh()
+    }
+
+    setTimeout(() => {
+      if (!button.isConnected) {
+        return
+      }
+
+      if (button.textContent === "Enabling..." || button.textContent === "Disabling...") {
+        this.refresh()
+      }
+    }, 1200)
   }
 
   refresh() {
     if (this.channel) {
       this.channel.perform("request_status")
+      return
     }
+
+    this.refreshViaHttp()
   }
 
   updateAgents(agents) {
@@ -107,6 +164,8 @@ export default class extends Controller {
       if (!card) {
         return
       }
+
+      card.dataset.agentEnabled = agent.enabled ? "true" : "false"
 
       const badge = card.querySelector("[data-agent-role='badge']")
       const runs = card.querySelector("[data-agent-role='runs']")
@@ -126,8 +185,25 @@ export default class extends Controller {
       }
 
       if (runButton) {
-        runButton.dataset.enabled = agent.enabled ? "true" : "false"
-        runButton.disabled = !agent.enabled
+        const enabled = agent.enabled === true
+        runButton.dataset.enabled = enabled ? "true" : "false"
+        runButton.disabled = !enabled
+        runButton.textContent = enabled ? "Run" : "Enable first"
+        runButton.className = this.runButtonClasses(enabled)
+      }
+
+      const toggleButton = card.querySelector("[data-agent-role='toggle']")
+      if (toggleButton) {
+        const enabled = agent.enabled === true
+        toggleButton.dataset.enabled = enabled ? "true" : "false"
+        toggleButton.disabled = false
+        toggleButton.textContent = enabled ? "Disable" : "Enable"
+        toggleButton.className = this.toggleButtonClasses(enabled)
+      }
+
+      const chaosHint = card.querySelector("[data-agent-role='chaos-hint']")
+      if (chaosHint) {
+        chaosHint.style.display = agent.enabled ? "none" : ""
       }
     })
   }
@@ -171,23 +247,29 @@ export default class extends Controller {
       })
       .join("")
 
-    this.feedTarget.innerHTML = `<div class=\"divide-y divide-neutral-800\">${html}</div>`
+    this.feedTarget.innerHTML = `<div class=\"divide-y divide-neutral-800\" data-agent-activity-list=\"true\">${html}</div>`
   }
 
   prependActivity(data) {
     // Add new activity item to top of feed
     const item = this.createActivityElement(data)
-    this.feedTarget.insertBefore(item, this.feedTarget.firstChild)
+    const list = this.feedTarget.querySelector("[data-agent-activity-list='true']")
+    if (list) {
+      list.insertBefore(item, list.firstChild)
+    } else {
+      this.feedTarget.insertBefore(item, this.feedTarget.firstChild)
+    }
     
     // Keep only last 50 items
-    while (this.feedTarget.children.length > 50) {
-      this.feedTarget.removeChild(this.feedTarget.lastChild)
+    const container = list || this.feedTarget
+    while (container.children.length > 50) {
+      container.removeChild(container.lastChild)
     }
   }
 
   createActivityElement(data) {
     const div = document.createElement("div")
-    div.className = "px-4 py-3 flex items-start gap-3 hover:bg-neutral-900/50 transition-colors animate-in fade-in"
+    div.className = "px-4 py-3 flex items-start gap-3 hover:bg-neutral-900/50 transition-colors"
     
     const icon = this.statusIcon(data.status)
     const color = this.statusColor(data.status)
@@ -248,5 +330,82 @@ export default class extends Controller {
   showNotification(message, type = "info") {
     // Simple notification - could be enhanced with a toast system
     console.log(`[AgentActivity] ${type}: ${message}`)
+  }
+
+  async runViaHttp(agentName) {
+    const res = await fetch(`/api/agents/${agentName}/run`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({ shard: "shard-default" })
+    })
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`)
+    }
+  }
+
+  async toggleViaHttp(agentName, enabled) {
+    const res = await fetch(`/api/agents/${agentName}/toggle`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({ enabled })
+    })
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`)
+    }
+
+    return res.json()
+  }
+
+  async refreshViaHttp() {
+    try {
+      const [statusRes, activityRes] = await Promise.all([
+        fetch("/api/agents/status", { credentials: "same-origin" }),
+        fetch("/api/agents/activity?limit=10", { credentials: "same-origin" })
+      ])
+
+      if (statusRes.ok) {
+        const status = await statusRes.json()
+        if (status && Array.isArray(status.agents)) {
+          this.updateAgents(status.agents)
+        }
+      }
+
+      if (activityRes.ok) {
+        const activity = await activityRes.json()
+        if (Array.isArray(activity)) {
+          this.updateActivity(activity)
+        }
+      }
+    } catch (error) {
+      this.showNotification(`Refresh failed: ${error.message}`, "error")
+    }
+  }
+
+  runButtonClasses(enabled) {
+    return enabled ? "cg-btn cg-btn--run" : "cg-btn cg-btn--run is-disabled"
+  }
+
+  toggleButtonClasses(enabled) {
+    return enabled ? "cg-btn cg-btn--toggle is-enabled" : "cg-btn cg-btn--toggle"
+  }
+
+  setButtonBusy(button, isBusy, busyLabel) {
+    if (!button) {
+      return
+    }
+
+    if (isBusy) {
+      button.disabled = true
+      button.dataset.previousLabel = button.textContent || ""
+      button.textContent = busyLabel
+      return
+    }
+
+    button.disabled = false
+    button.textContent = button.dataset.previousLabel || button.textContent
   }
 }

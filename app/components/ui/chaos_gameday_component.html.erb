@@ -1,4 +1,34 @@
 <div class="space-y-4">
+  <div class="rounded-xl border border-neutral-800 bg-neutral-950/40 px-4 py-3">
+    <div class="flex items-center justify-between gap-3">
+      <div class="text-xs text-neutral-500 uppercase tracking-wider">Latest Chaos Decision</div>
+      <span class="<%= decision_badge_classes %>"><%= @chaos_insight[:decision_label] || "Pending" %></span>
+    </div>
+
+    <div class="mt-2 text-sm text-neutral-200">
+      <%= @chaos_insight[:reason] || "No chaos decision recorded yet. Enable and run chaos orchestrator to populate this panel." %>
+    </div>
+
+    <% if has_reasons? %>
+      <ul class="mt-2 space-y-1 text-xs text-neutral-400">
+        <% Array(@chaos_insight[:reasons]).first(3).each do |reason| %>
+          <li>• <%= reason %></li>
+        <% end %>
+      </ul>
+    <% end %>
+
+    <div class="mt-2 text-xs text-neutral-500">
+      <% if @chaos_insight[:last_run_at].present? %>
+        Last run: <span class="text-neutral-300"><%= @chaos_insight[:last_run_at].utc.strftime("%Y-%m-%d %H:%M:%S UTC") %></span>
+      <% else %>
+        Last run: <span class="text-neutral-300">none</span>
+      <% end %>
+      <% if @chaos_insight[:drill_rationale].present? %>
+        • Rationale: <span class="text-neutral-300"><%= @chaos_insight[:drill_rationale] %></span>
+      <% end %>
+    </div>
+  </div>
+
   <div class="text-sm text-neutral-300">
     Controlled fault injection to validate closed-loop reliability. Blast radius:
     <span class="font-medium"><%= @shard %></span>.
@@ -8,7 +38,7 @@
     <button data-controller="gameday"
             data-action="click->gameday#partitionDocker"
             data-gameday-duration-value="<%= @default_duration %>"
-            class="rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-left hover:bg-neutral-900">
+            class="rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-left hover:bg-neutral-900 cursor-pointer">
       <div class="text-xs text-neutral-400">Chaos</div>
       <div class="mt-1 font-semibold">Partition Redis (Docker)</div>
       <div class="mt-1 text-xs text-neutral-500">Disconnect redis container from network for N seconds.</div>
@@ -17,7 +47,7 @@
     <button data-controller="gameday"
             data-action="click->gameday#partitionTc"
             data-gameday-duration-value="<%= @default_duration %>"
-            class="rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-left hover:bg-neutral-900">
+            class="rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-left hover:bg-neutral-900 cursor-pointer">
       <div class="text-xs text-neutral-400">Chaos</div>
       <div class="mt-1 font-semibold">Degrade Redis (tc)</div>
       <div class="mt-1 text-xs text-neutral-500">Add latency/loss. Requires sudo.</div>
@@ -25,7 +55,7 @@
 
     <button data-controller="gameday"
             data-action="click->gameday#heal"
-            class="rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-left hover:bg-neutral-900">
+            class="rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-left hover:bg-neutral-900 cursor-pointer">
       <div class="text-xs text-neutral-400">Recovery</div>
       <div class="mt-1 font-semibold">Heal</div>
       <div class="mt-1 text-xs text-neutral-500">Cleanup tc + reconnect redis.</div>
