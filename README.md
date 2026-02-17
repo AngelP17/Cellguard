@@ -272,5 +272,3 @@ gantt
 - Autonomous agent layer for proactive reliability
 
 ---
-
-Built with ☕ and 🛡️ for teams that care about reliability.
