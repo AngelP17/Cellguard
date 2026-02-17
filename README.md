@@ -1,6 +1,5 @@
 # CellGuard
-
-> **Live Demo**: [https://cellguard-demo.fly.dev](https://cellguard-demo.fly.dev)  
+ 
 > **Watch it work** (30 seconds): See the release gate flip from open → locked after chaos injection
 
 [![CellGuard Demo](https://img.shields.io/badge/Demo-Live-green)](https://cellguard-demo.fly.dev)
