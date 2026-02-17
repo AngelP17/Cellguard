@@ -16,7 +16,9 @@
           <button 
             data-action="click->agent-activity#triggerAgent"
             data-agent-name="<%= agent[:name] %>"
-            class="text-xs px-2 py-1 rounded bg-neutral-800 hover:bg-neutral-700 transition-colors"
+            data-agent-role="run"
+            data-enabled="<%= agent[:enabled] ? "true" : "false" %>"
+            class="text-xs text-neutral-100 border border-neutral-700 px-2 py-1 rounded bg-neutral-900 hover:bg-neutral-700 transition-colors"
             <%= agent[:enabled] ? "" : "disabled" %>
           >
             Run

@@ -15,3 +15,27 @@ release_gate:
       fi
   rules:
     - if: $CI_COMMIT_BRANCH
+
+go_classifier:
+  stage: test
+  image: golang:1.22
+  script:
+    - cd go/classifier
+    - go test ./...
+    - go build ./cmd/classifier
+  rules:
+    - exists:
+        - go/classifier/go.mod
+      if: $CI_COMMIT_BRANCH
+
+go_agent_runner:
+  stage: test
+  image: golang:1.22
+  script:
+    - cd go/agent-runner
+    - go test ./...
+    - go build ./cmd/runner
+  rules:
+    - exists:
+        - go/agent-runner/go.mod
+      if: $CI_COMMIT_BRANCH

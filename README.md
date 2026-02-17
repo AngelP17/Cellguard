@@ -72,6 +72,28 @@ open https://cellguard-demo.fly.dev/dashboard
 
 ---
 
+## 👀 UI Entry Points
+
+You can view the project UI at:
+- Marketing/home: [https://cellguard-demo.fly.dev/](https://cellguard-demo.fly.dev/)
+- Main control plane dashboard: [https://cellguard-demo.fly.dev/dashboard](https://cellguard-demo.fly.dev/dashboard)
+- Incidents list: [https://cellguard-demo.fly.dev/incidents](https://cellguard-demo.fly.dev/incidents)
+
+Local equivalents (when running locally):
+- `http://localhost:3000/`
+- `http://localhost:3000/dashboard`
+- `http://localhost:3000/incidents`
+
+Automated UI capture (Go Rod + stealth):
+
+```bash
+make go-ui-smoke
+```
+
+This writes a screenshot to `tmp/ui-dashboard.png`.
+
+---
+
 ## 📹 Video Demo (For Recruiters/Sharing)
 
 Don't want to run commands? Watch this 60-second walkthrough:
@@ -155,6 +177,36 @@ curl -X POST http://localhost:3000/api/agents/run-all \
   -d '{"async":true}'
 ```
 
+### Go Execution Plane (Classifier + Agent Runner)
+
+This repo now includes two Go services:
+- `go/classifier` (`/classify`, `/healthz`, `/metrics`)
+- `go/agent-runner` (periodic agent loop calling Rails HTTP APIs)
+
+Run locally:
+
+```bash
+# Terminal 4: Classifier service on :8081
+make go-classifier-run
+
+# Terminal 5: Agent runner (safe defaults; chaos disabled unless enabled explicitly)
+make go-agent-runner-run
+```
+
+Enable autonomous chaos from runner (optional):
+
+```bash
+cd go/agent-runner
+RAILS_BASE_URL=http://localhost:3000 SHARD=shard-default AGENT_RUNNER_ENABLE_CHAOS=true go run ./cmd/runner
+```
+
+### If dashboard shows `LOCKED (423)` and you want a fresh local state
+
+```bash
+make reset-demo
+make enable-chaos-orchestrator   # optional
+```
+
 ---
 
 ## 🔌 Core APIs
@@ -231,7 +283,7 @@ gantt
 
 - [Agent Runtime Design](./docs/AGENTS.md)
 - [Game Day Runbook](./docs/runbooks/gameday.md)
-- [Architecture Overview](./docs/ARCHITECTURE.md)
+- [Architecture Overview](./ARCHITECTURE.md)
 
 ---
 

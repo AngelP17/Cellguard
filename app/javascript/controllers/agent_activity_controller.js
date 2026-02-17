@@ -60,7 +60,12 @@ export default class extends Controller {
   }
 
   triggerAgent(event) {
-    const agentName = event.currentTarget.dataset.agentName
+    const button = event.currentTarget
+    if (!button) {
+      return
+    }
+
+    const agentName = button.dataset.agentName
     
     if (this.channel) {
       this.channel.perform("trigger_agent", {
@@ -70,12 +75,19 @@ export default class extends Controller {
     }
 
     // Optimistic UI update
-    event.currentTarget.disabled = true
-    event.currentTarget.textContent = "Running..."
+    const previousLabel = button.textContent
+    button.disabled = true
+    button.textContent = "Running..."
     
     setTimeout(() => {
-      event.currentTarget.disabled = false
-      event.currentTarget.textContent = "Run"
+      if (!button.isConnected) {
+        return
+      }
+
+      // Respect server-driven enabled/disabled state if available
+      const enabledByServer = button.dataset.enabled !== "false"
+      button.disabled = !enabledByServer
+      button.textContent = previousLabel || "Run"
     }, 2000)
   }
 
@@ -98,6 +110,7 @@ export default class extends Controller {
 
       const badge = card.querySelector("[data-agent-role='badge']")
       const runs = card.querySelector("[data-agent-role='runs']")
+      const runButton = card.querySelector("[data-agent-role='run']")
 
       if (badge) {
         badge.textContent = agent.enabled ? "Enabled" : "Disabled"
@@ -110,6 +123,11 @@ export default class extends Controller {
 
       if (runs) {
         runs.textContent = `${agent.recent_executions} runs today`
+      }
+
+      if (runButton) {
+        runButton.dataset.enabled = agent.enabled ? "true" : "false"
+        runButton.disabled = !agent.enabled
       }
     })
   }

@@ -1,13 +1,15 @@
 name: Deploy to Fly.io
 
 on:
-  push:
-    branches: [main]
+  workflow_run:
+    workflows: ["Gate Proof (Local Stack)"]
+    types: [completed]
   workflow_dispatch:
 
 jobs:
   deploy:
     name: Deploy to Fly.io
+    if: ${{ (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success') && secrets.FLY_API_TOKEN != '' }}
     runs-on: ubuntu-latest
     concurrency:
       group: deploy
@@ -21,3 +23,15 @@ jobs:
         run: flyctl deploy --remote-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+  deploy-skipped:
+    name: Deploy Skipped (Missing Token or Gate Proof Failure)
+    if: ${{ !((github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success') && secrets.FLY_API_TOKEN != '') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Explain skip
+        run: |
+          echo "Deploy skipped."
+          echo "Requirements:"
+          echo "1) Gate Proof workflow must be successful (unless manual dispatch)."
+          echo "2) GitHub secret FLY_API_TOKEN must be set."

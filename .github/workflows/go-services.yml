@@ -1,0 +1,42 @@
+name: Go Services CI
+
+on:
+  push:
+    paths:
+      - "go/**"
+      - ".github/workflows/go-services.yml"
+  pull_request:
+    paths:
+      - "go/**"
+      - ".github/workflows/go-services.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - classifier
+          - agent-runner
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22.x"
+          cache-dependency-path: go/${{ matrix.service }}/go.mod
+
+      - name: Go test
+        working-directory: go/${{ matrix.service }}
+        run: go test ./...
+
+      - name: Go build
+        working-directory: go/${{ matrix.service }}
+        run: |
+          if [ "${{ matrix.service }}" = "classifier" ]; then
+            go build ./cmd/classifier
+          else
+            go build ./cmd/runner
+          fi

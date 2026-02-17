@@ -2,13 +2,18 @@
 
 ```mermaid
 flowchart LR
-  A["Rails API/UI Surface"] --> B["BudgetEvaluator"]
-  A --> C["ClassifierClient"]
-  B --> D["Release Gate (423)"]
-  C --> E["Incident Creation"]
-  D --> F["Audit Logs"]
-  E --> F
-  G["Autonomous Agents"] --> B
-  G --> A
-  G --> F
+  UI["Rails UI (/dashboard, /incidents)"] --> API["Rails API Surface"]
+  API --> BE["BudgetEvaluator"]
+  API --> RCC["Ruby ClassifierClient"]
+  RCC --> GCLS["Go Classifier (/classify)"]
+  BE --> GATE["Release Gate (200 / 423)"]
+  API --> INC["Incident Creation"]
+  GATE --> AUD["Audit Logs"]
+  INC --> AUD
+
+  RSCH["Rails AgentScheduler + Sidekiq"] --> API
+  GRUN["Go Agent Runner"] --> API
+  GRUN --> CHAOS["Chaos Endpoints"]
+  RSCH --> AUD
+  GRUN --> AUD
 ```
