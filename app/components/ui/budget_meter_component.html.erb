@@ -1,0 +1,10 @@
+<div>
+  <div class="flex items-center justify-between text-xs text-neutral-400">
+    <div>Error budget</div>
+    <div><%= pct %>% remaining</div>
+  </div>
+  <div class="mt-2 h-2 w-full rounded-full bg-neutral-900">
+    <div class="h-2 rounded-full bg-neutral-100" style="width:<%= pct %>%"></div>
+  </div>
+  <div class="mt-2 text-xs text-neutral-600">Gate locks when remaining reaches 0.</div>
+</div>

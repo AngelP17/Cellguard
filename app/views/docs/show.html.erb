@@ -1,0 +1,7 @@
+<%= render Ui::ShellComponent.new(title: @title, subtitle: "Docs are part of the product surface (runbooks + postmortems).") do %>
+  <div class="rounded-2xl border border-neutral-900 bg-neutral-950/60 px-6 py-6">
+    <article class="prose prose-invert max-w-none">
+      <%= @html %>
+    </article>
+  </div>
+<% end %>

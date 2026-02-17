@@ -1,0 +1,38 @@
+<div class="space-y-4">
+  <div class="text-sm text-neutral-300">
+    Controlled fault injection to validate closed-loop reliability. Blast radius:
+    <span class="font-medium"><%= @shard %></span>.
+  </div>
+
+  <div class="grid gap-3 md:grid-cols-3">
+    <button data-controller="gameday"
+            data-action="click->gameday#partitionDocker"
+            data-gameday-duration-value="<%= @default_duration %>"
+            class="rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-left hover:bg-neutral-900">
+      <div class="text-xs text-neutral-400">Chaos</div>
+      <div class="mt-1 font-semibold">Partition Redis (Docker)</div>
+      <div class="mt-1 text-xs text-neutral-500">Disconnect redis container from network for N seconds.</div>
+    </button>
+
+    <button data-controller="gameday"
+            data-action="click->gameday#partitionTc"
+            data-gameday-duration-value="<%= @default_duration %>"
+            class="rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-left hover:bg-neutral-900">
+      <div class="text-xs text-neutral-400">Chaos</div>
+      <div class="mt-1 font-semibold">Degrade Redis (tc)</div>
+      <div class="mt-1 text-xs text-neutral-500">Add latency/loss. Requires sudo.</div>
+    </button>
+
+    <button data-controller="gameday"
+            data-action="click->gameday#heal"
+            class="rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-left hover:bg-neutral-900">
+      <div class="text-xs text-neutral-400">Recovery</div>
+      <div class="mt-1 font-semibold">Heal</div>
+      <div class="mt-1 text-xs text-neutral-500">Cleanup tc + reconnect redis.</div>
+    </button>
+  </div>
+
+  <div class="rounded-xl border border-neutral-900 bg-neutral-950/40 px-4 py-3 text-xs text-neutral-400">
+    Demo: run <span class="text-neutral-200">make gameday</span> and watch gate flip to <span class="text-neutral-200">423 Locked</span>.
+  </div>
+</div>

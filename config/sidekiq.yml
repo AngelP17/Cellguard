@@ -1,0 +1,11 @@
+:concurrency: 5
+:queues:
+  - default
+
+:scheduler:
+  :enabled: true
+  :schedule:
+    agent_scheduler:
+      every: ["60s", first_in: "10s"]
+      class: "AgentSchedulerJob"
+      queue: default

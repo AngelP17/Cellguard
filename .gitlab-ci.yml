@@ -1,0 +1,17 @@
+stages: [validate, test, deploy]
+
+release_gate:
+  stage: validate
+  image: curlimages/curl:8.6.0
+  script:
+    - |
+      set -e
+      : "${CELLGUARD_URL:?CELLGUARD_URL is required}"
+      code=$(curl -s -o out.json -w "%{http_code}" "$CELLGUARD_URL/api/release-gate/check?shard=shard-default")
+      cat out.json
+      if [ "$code" = "423" ]; then
+        echo "Release gate blocked (423 Locked)."
+        exit 1
+      fi
+  rules:
+    - if: $CI_COMMIT_BRANCH

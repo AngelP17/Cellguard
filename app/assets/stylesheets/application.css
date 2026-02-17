@@ -1,0 +1,9 @@
+/*
+ *= require_tree .
+ *= require_self
+ */
+
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+}

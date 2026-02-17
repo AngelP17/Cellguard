@@ -1,0 +1,150 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT_DIR"
+
+PATH_PREFIX="/opt/homebrew/opt/postgresql@16/bin"
+if [[ -d "$PATH_PREFIX" ]]; then
+  export PATH="$PATH_PREFIX:$PATH"
+fi
+
+if command -v rbenv >/dev/null 2>&1; then
+  eval "$(rbenv init - zsh)"
+fi
+
+TRIGGER_ASYNC=true
+MONITOR=true
+MONITOR_INTERVAL=5
+HOST="http://127.0.0.1:3000"
+
+usage() {
+  cat <<'EOF'
+Usage: bin/run-all [options]
+
+Starts Rails web + Sidekiq (with scheduler), optionally triggers /api/agents/run-all,
+and monitors AgentExecution growth.
+
+Options:
+  --no-trigger          Do not call /api/agents/run-all after startup
+  --no-monitor          Do not print periodic execution counts
+  --interval <seconds>  Monitoring interval (default: 5)
+  --host <url>          Host for API calls (default: http://127.0.0.1:3000)
+  -h, --help            Show this help
+
+Examples:
+  bin/run-all
+  bin/run-all --no-trigger
+  bin/run-all --interval 2 --host http://localhost:3000
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --no-trigger)
+      TRIGGER_ASYNC=false
+      shift
+      ;;
+    --no-monitor)
+      MONITOR=false
+      shift
+      ;;
+    --interval)
+      MONITOR_INTERVAL="${2:-}"
+      [[ -n "$MONITOR_INTERVAL" ]] || { echo "Missing value for --interval" >&2; exit 1; }
+      shift 2
+      ;;
+    --host)
+      HOST="${2:-}"
+      [[ -n "$HOST" ]] || { echo "Missing value for --host" >&2; exit 1; }
+      shift 2
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $1" >&2
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+mkdir -p log tmp/pids
+
+export ALLOW_DEMO_ENDPOINTS="${ALLOW_DEMO_ENDPOINTS:-true}"
+export CLASSIFIER_STUB="${CLASSIFIER_STUB:-true}"
+export REDIS_URL="${REDIS_URL:-redis://localhost:6379/1}"
+
+cleanup() {
+  if [[ "${CLEANED_UP:-false}" == "true" ]]; then
+    return
+  fi
+  CLEANED_UP=true
+
+  echo
+  echo "Stopping services..."
+  [[ -n "${RAILS_PID:-}" ]] && kill "$RAILS_PID" >/dev/null 2>&1 || true
+  [[ -n "${SIDEKIQ_PID:-}" ]] && kill "$SIDEKIQ_PID" >/dev/null 2>&1 || true
+  wait "${RAILS_PID:-}" >/dev/null 2>&1 || true
+  wait "${SIDEKIQ_PID:-}" >/dev/null 2>&1 || true
+  echo "Stopped."
+}
+trap cleanup EXIT INT TERM
+
+echo "Preparing database..."
+bundle exec rails db:prepare >/tmp/cellguard_db_prepare.log 2>&1 || {
+  echo "db:prepare failed. See /tmp/cellguard_db_prepare.log" >&2
+  exit 1
+}
+
+echo "Starting Rails server..."
+bundle exec rails server -p 3000 -b 127.0.0.1 >log/web.log 2>&1 &
+RAILS_PID=$!
+
+echo "Starting Sidekiq worker..."
+bundle exec sidekiq -C config/sidekiq.yml >log/sidekiq.log 2>&1 &
+SIDEKIQ_PID=$!
+
+for _ in {1..40}; do
+  code=$(curl -s -o /tmp/cellguard_ready.json -w '%{http_code}' "$HOST/api/release-gate/check?shard=shard-default" || true)
+  if [[ "$code" == "200" || "$code" == "423" ]]; then
+    break
+  fi
+  sleep 1
+done
+
+if [[ "$code" != "200" && "$code" != "423" ]]; then
+  echo "Rails did not become ready. Check log/web.log" >&2
+  exit 1
+fi
+
+echo "Services are up. Rails status: $code"
+
+echo "--- Sidekiq schedule status (tail) ---"
+rg -n "Scheduling agent_scheduler|Schedules Loaded|Sidekiq" log/sidekiq.log | tail -n 5 || true
+
+if [[ "$TRIGGER_ASYNC" == "true" ]]; then
+  echo "Triggering async agent fanout..."
+  curl -s -X POST "$HOST/api/agents/run-all" \
+    -H "Content-Type: application/json" \
+    -d '{"async":true}' | tee /tmp/cellguard_run_all_response.json
+  echo
+fi
+
+if [[ "$MONITOR" == "true" ]]; then
+  echo "Monitoring AgentExecution every ${MONITOR_INTERVAL}s. Press Ctrl+C to stop."
+  while true; do
+    ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    counts=$(bundle exec rails runner 'print [AgentExecution.count, AgentExecution.where(status: :completed).count, AgentExecution.where(status: :failed).count].join(" ")' 2>/dev/null || echo "0 0 0")
+    total="$(echo "$counts" | awk '{print $1}')"
+    done_count="$(echo "$counts" | awk '{print $2}')"
+    failed="$(echo "$counts" | awk '{print $3}')"
+    echo "[$ts] total=$total completed=$done_count failed=$failed"
+    sleep "$MONITOR_INTERVAL"
+  done
+else
+  echo "Running without monitor. Press Ctrl+C to stop services."
+  wait "$RAILS_PID" "$SIDEKIQ_PID"
+fi

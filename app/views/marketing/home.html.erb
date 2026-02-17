@@ -1,0 +1,25 @@
+<%= render Ui::ShellComponent.new(
+  title: "CellGuard",
+  subtitle: "A reliability control plane: policy-as-code (423) + Game Day chaos + audited governance."
+) do %>
+
+  <div class="rounded-2xl border border-neutral-900 bg-neutral-950/60 px-8 py-10">
+    <div class="text-sm text-neutral-300 max-w-3xl">
+      CellGuard is intentionally not a dashboard clone. It enforces release policy using SLO error budgets,
+      records override governance, and proves reliability via controlled failure injection (Game Day).
+    </div>
+
+    <div class="mt-8 flex flex-wrap gap-3">
+      <a href="/dashboard#game-day" class="rounded-xl bg-neutral-100 px-5 py-3 text-sm font-semibold text-neutral-950 hover:opacity-90">
+        Run Game Day
+      </a>
+      <a href="/dashboard" class="rounded-xl border border-neutral-800 px-5 py-3 text-sm hover:bg-neutral-900">
+        Open Dashboard
+      </a>
+      <a href="/runbooks/gameday" class="rounded-xl border border-neutral-800 px-5 py-3 text-sm hover:bg-neutral-900">
+        View Runbook
+      </a>
+    </div>
+  </div>
+
+<% end %>

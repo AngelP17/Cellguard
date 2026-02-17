@@ -1,0 +1,114 @@
+name: Gate Proof (Local Stack)
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+jobs:
+  gate-proof:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: cellguard_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+
+    env:
+      RAILS_ENV: test
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/cellguard_test
+      ALLOW_DEMO_ENDPOINTS: "true"
+      CLASSIFIER_URL: http://127.0.0.1:8081
+      CLASSIFIER_STUB: "true"
+      REDIS_URL: redis://localhost:6379/1
+      RAILS_LOG_TO_STDOUT: "true"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Prepare DB
+        run: |
+          bundle exec rails db:prepare
+
+      - name: Start deterministic classifier stub
+        run: |
+          cat > classifier_stub.rb <<'RUBY'
+          require "webrick"
+          require "json"
+
+          server = WEBrick::HTTPServer.new(
+            Port: 8081,
+            BindAddress: "127.0.0.1",
+            AccessLog: [],
+            Logger: WEBrick::Log.new($stderr, WEBrick::Log::WARN)
+          )
+
+          server.mount_proc "/classify" do |req, res|
+            payload = JSON.parse(req.body)
+            error_rate = payload["error_rate"].to_f
+            p95 = payload["p95_latency_ms"].to_i
+            is_violation = (error_rate >= 0.12) || (p95 >= 800)
+            action = is_violation ? "alert" : "noop"
+            reason = is_violation ? "burning_error_budget" : "healthy"
+
+            res["Content-Type"] = "application/json"
+            res.body = JSON.dump({
+              "is_violation" => is_violation,
+              "action" => action,
+              "reason" => reason
+            })
+          end
+
+          trap("INT") { server.shutdown }
+          server.start
+          RUBY
+
+          ruby classifier_stub.rb &
+
+      - name: Start Rails server
+        run: |
+          bundle exec rails server -p 3000 -b 127.0.0.1 &
+
+      - name: Baseline gate should be OPEN (200)
+        run: |
+          sleep 5
+          code=$(curl -s -o out.json -w "%{http_code}" "http://127.0.0.1:3000/api/release-gate/check?shard=shard-default")
+          cat out.json
+          test "$code" = "200"
+
+      - name: Inject failures + evaluate
+        run: |
+          curl -s -X POST "http://127.0.0.1:3000/api/inject-failures" \
+            -H 'Content-Type: application/json' \
+            -d '{"shard":"shard-default","queue":"default","minutes":5,"error_rate":0.20,"total":2000,"p95_latency_ms":650}' > /dev/null
+
+          curl -s -X POST "http://127.0.0.1:3000/api/evaluate" \
+            -H 'Content-Type: application/json' \
+            -d '{"shard":"shard-default","window_minutes":60}' | jq .
+
+      - name: Gate must be LOCKED (423)
+        run: |
+          code=$(curl -s -o out.json -w "%{http_code}" "http://127.0.0.1:3000/api/release-gate/check?shard=shard-default")
+          cat out.json
+          test "$code" = "423"

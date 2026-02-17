@@ -1,0 +1,116 @@
+<%= render Ui::ShellComponent.new(
+  title: "Dashboard",
+  subtitle: "Autonomous Control Plane • Policy Enforcement • Chaos Engineering"
+) do %>
+
+  <div class="space-y-6">
+    <%# Hero Gate Panel %>
+    <%= render Ui::GatePanelComponent.new(
+      gate_open: @budget.release_gate_open,
+      reason: (@budget.release_gate_open ? nil : "Error budget exhausted. Override requires justification + audit log."),
+      violation_started_at: @budget.violation_started_at,
+      burn_rate: @budget.current_burn_rate.to_f,
+      budget_remaining: @budget.budget_remaining.to_f
+    ) %>
+
+    <%# Agent Activity - The WOW Factor %>
+    <div class="rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-950/20 to-neutral-950/60 px-6 py-6">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+        <div>
+          <div class="text-sm font-semibold text-emerald-400">Autonomous Agents</div>
+          <div class="text-xs text-neutral-500">Self-managing reliability operations</div>
+        </div>
+      </div>
+      <%= render Ui::AgentActivityComponent.new(
+        agents: @agent_status,
+        recent_activity: @agent_activity
+      ) %>
+    </div>
+
+    <div class="grid gap-6 md:grid-cols-2">
+      <%# Error Budget Panel %>
+      <div class="rounded-2xl border border-neutral-900 bg-neutral-950/60 px-6 py-6">
+        <div class="text-sm font-semibold">Error Budget</div>
+        <div class="mt-1 text-xs text-neutral-400">SLO-driven policy primitive</div>
+        <div class="mt-4">
+          <%= render Ui::BudgetMeterComponent.new(remaining: @budget.budget_remaining.to_f) %>
+        </div>
+        <div class="mt-4 grid grid-cols-2 gap-4 text-xs">
+          <div>
+            <div class="text-neutral-500">SLO Target</div>
+            <div class="text-neutral-200 font-mono"><%= (@budget.slo_target.to_f * 100).round(1) %>%</div>
+          </div>
+          <div>
+            <div class="text-neutral-500">Window</div>
+            <div class="text-neutral-200 font-mono"><%= @budget.window_days %> days</div>
+          </div>
+          <div>
+            <div class="text-neutral-500">Consumed</div>
+            <div class="text-neutral-200 font-mono"><%= (@budget.budget_consumed.to_f * 100).round(2) %>%</div>
+          </div>
+          <div>
+            <div class="text-neutral-500">Burn Rate</div>
+            <div class="text-neutral-200 font-mono"><%= @budget.current_burn_rate.to_f %>x</div>
+          </div>
+        </div>
+      </div>
+
+      <%# Chaos Engineering Panel %>
+      <div id="game-day" class="rounded-2xl border border-neutral-900 bg-neutral-950/60 px-6 py-6">
+        <div class="text-sm font-semibold">Chaos Engineering</div>
+        <div class="mt-1 text-xs text-neutral-400">Game Day fault injection (SRE-grade proof)</div>
+        <div class="mt-4">
+          <%= render Ui::ChaosGamedayComponent.new(shard: @shard.name, default_duration: 20) %>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid gap-6 md:grid-cols-2">
+      <%# Recent Incidents %>
+      <div class="rounded-2xl border border-neutral-900 bg-neutral-950/60 px-6 py-6">
+        <div class="text-sm font-semibold">Recent Incidents</div>
+        <div class="mt-1 text-xs text-neutral-400">Classifier-driven with auto-analysis</div>
+        <div class="mt-3 space-y-2">
+          <% @incidents.each do |i| %>
+            <div class="rounded-xl border border-neutral-900 px-4 py-3">
+              <div class="text-sm font-medium"><%= i.title %></div>
+              <div class="mt-1 text-xs text-neutral-400"><%= i.severity_label %> • <%= i.status %> • <%= time_ago_in_words(i.created_at) %> ago</div>
+              <% if i.context&.dig("suggested_runbooks").present? %>
+                <div class="mt-2 flex flex-wrap gap-1">
+                  <% i.context["suggested_runbooks"].first(2).each do |rb| %>
+                    <a href="/runbooks/<%= rb['slug'] %>" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      <%= rb['title'] %>
+                    </a>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+          <% if @incidents.empty? %>
+            <div class="text-sm text-neutral-500">No incidents yet.</div>
+          <% end %>
+        </div>
+      </div>
+
+      <%# Audit Trail %>
+      <div class="rounded-2xl border border-neutral-900 bg-neutral-950/60 px-6 py-6">
+        <div class="text-sm font-semibold">Audit Trail</div>
+        <div class="mt-1 text-xs text-neutral-400">Overrides require justification</div>
+        <div class="mt-3 space-y-2">
+          <% @audit_logs.each do |a| %>
+            <div class="rounded-xl border border-neutral-900 px-4 py-3">
+              <div class="text-sm font-medium"><%= a.action %></div>
+              <div class="mt-1 text-xs text-neutral-400"><%= a.actor %> • <%= time_ago_in_words(a.created_at) %> ago</div>
+              <div class="mt-2 text-xs text-neutral-300"><%= a.justification %></div>
+            </div>
+          <% end %>
+          <% if @audit_logs.empty? %>
+            <div class="text-sm text-neutral-500">No audit events yet.</div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<% end %>
