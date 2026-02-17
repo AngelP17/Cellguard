@@ -9,8 +9,20 @@ class DashboardController < ApplicationController
     # Run agents automatically on dashboard load (if enabled)
     run_autonomous_agents
 
-    @incidents = @shard.incidents.order(created_at: :desc).limit(10)
-    @audit_logs = @shard.audit_logs.order(created_at: :desc).limit(10)
+    @incidents = @shard.incidents.order(created_at: :desc).limit(10).to_a
+    @audit_logs = @shard.audit_logs.order(created_at: :desc).limit(10).to_a
+    @incident_scope = :shard
+    @audit_scope = :shard
+
+    if @incidents.empty?
+      @incidents = Incident.recent.limit(10).to_a
+      @incident_scope = :global
+    end
+
+    if @audit_logs.empty?
+      @audit_logs = AuditLog.recent.limit(10).to_a
+      @audit_scope = :global
+    end
 
     # Agent system data
     @agent_status = AgentConfig.agents

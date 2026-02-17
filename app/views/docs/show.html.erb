@@ -6,8 +6,92 @@
       <a href="/incidents" class="cg-btn cg-btn--secondary">Incidents</a>
     </div>
 
+    <% if @runbook_slugs.present? %>
+      <div class="cg-doc-tabs mb-4">
+        <% @runbook_slugs.each do |runbook_slug| %>
+          <% active = runbook_slug == @slug %>
+          <a
+            href="/runbooks/<%= runbook_slug %><%= @incident ? "?incident_id=#{@incident.id}" : "" %>"
+            class="cg-doc-tab <%= active ? "is-active" : "" %>"
+          >
+            <%= runbook_slug.humanize %>
+          </a>
+        <% end %>
+      </div>
+    <% end %>
+
+    <% if @incident.present? %>
+      <div class="rounded-xl border border-neutral-800 bg-neutral-950/50 px-4 py-3 mb-4">
+        <div class="text-xs text-neutral-500 uppercase tracking-wider">Incident Context</div>
+        <div class="mt-1 text-sm text-neutral-200"><%= @incident.title %></div>
+        <div class="mt-1 text-xs text-neutral-400">
+          <%= @incident.severity_label %> • <%= @incident.status %> • <%= @incident.shard&.name %>
+        </div>
+        <div class="mt-2">
+          <a href="/incidents#incident-<%= @incident.id %>" class="cg-btn cg-btn--secondary">Back To Incident</a>
+        </div>
+      </div>
+    <% end %>
+
     <article class="prose prose-invert max-w-none cg-doc-article">
       <%= @html %>
     </article>
+
+    <% if @prev_runbook_slug.present? || @next_runbook_slug.present? %>
+      <div class="mt-6 flex items-center justify-between gap-3">
+        <div>
+          <% if @prev_runbook_slug.present? %>
+            <a href="/runbooks/<%= @prev_runbook_slug %><%= @incident ? "?incident_id=#{@incident.id}" : "" %>" class="cg-btn cg-btn--secondary">
+              ← <%= @prev_runbook_slug.humanize %>
+            </a>
+          <% end %>
+        </div>
+        <div>
+          <% if @next_runbook_slug.present? %>
+            <a href="/runbooks/<%= @next_runbook_slug %><%= @incident ? "?incident_id=#{@incident.id}" : "" %>" class="cg-btn cg-btn--secondary">
+              <%= @next_runbook_slug.humanize %> →
+            </a>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="mt-6 grid gap-6 md:grid-cols-2">
+    <div class="rounded-2xl border border-neutral-900 bg-neutral-950/60 px-6 py-6">
+      <div class="text-sm font-semibold">Recent Incidents</div>
+      <div class="mt-1 text-xs text-neutral-400">Navigate directly into incident context</div>
+      <div class="mt-3 space-y-2">
+        <% @recent_incidents.to_a.each do |incident| %>
+          <div class="rounded-xl border border-neutral-900 px-4 py-3">
+            <div class="text-sm font-medium"><%= incident.title %></div>
+            <div class="mt-1 text-xs text-neutral-400"><%= incident.severity_label %> • <%= time_ago_in_words(incident.created_at) %> ago</div>
+            <div class="mt-2">
+              <a href="/incidents#incident-<%= incident.id %>" class="cg-btn cg-btn--secondary">Open Incident</a>
+            </div>
+          </div>
+        <% end %>
+        <% if @recent_incidents.to_a.empty? %>
+          <div class="text-sm text-neutral-500">No incidents yet.</div>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="rounded-2xl border border-neutral-900 bg-neutral-950/60 px-6 py-6">
+      <div class="text-sm font-semibold">Audit Trail</div>
+      <div class="mt-1 text-xs text-neutral-400">Recent policy and agent decisions</div>
+      <div class="mt-3 space-y-2">
+        <% @recent_audit_logs.to_a.each do |audit| %>
+          <div class="rounded-xl border border-neutral-900 px-4 py-3">
+            <div class="text-sm font-medium"><%= audit.action %></div>
+            <div class="mt-1 text-xs text-neutral-400"><%= audit.actor %> • <%= time_ago_in_words(audit.created_at) %> ago</div>
+            <div class="mt-2 text-xs text-neutral-300"><%= audit.justification %></div>
+          </div>
+        <% end %>
+        <% if @recent_audit_logs.to_a.empty? %>
+          <div class="text-sm text-neutral-500">No audit events yet.</div>
+        <% end %>
+      </div>
+    </div>
   </div>
 <% end %>

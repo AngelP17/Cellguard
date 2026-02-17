@@ -20,7 +20,7 @@
         <% response_sla = context.dig("severity_assessment", "response_time_sla") %>
         <% likely_cause = Array(context["likely_causes"]).first&.dig("description") %>
 
-        <article class="rounded-xl border border-neutral-900 px-4 py-4">
+        <article id="incident-<%= incident.id %>" class="rounded-xl border border-neutral-900 px-4 py-4">
           <div class="flex items-start justify-between gap-4">
             <div>
               <div class="text-sm font-semibold"><%= incident.title %></div>
@@ -63,7 +63,7 @@
               <% suggested_runbooks.first(3).each do |runbook| %>
                 <% slug = runbook["slug"].to_s %>
                 <% title = runbook["title"].presence || slug.humanize %>
-                <a href="/runbooks/<%= slug %>" class="cg-chip">
+                <a href="/runbooks/<%= slug %>?incident_id=<%= incident.id %>" class="cg-chip">
                   <%= title %>
                 </a>
               <% end %>

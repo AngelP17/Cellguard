@@ -105,16 +105,29 @@
       <%# Recent Incidents %>
       <div class="rounded-2xl border border-neutral-900 bg-neutral-950/60 px-6 py-6">
         <div class="text-sm font-semibold">Recent Incidents</div>
-        <div class="mt-1 text-xs text-neutral-400">Classifier-driven with auto-analysis</div>
+        <div class="mt-1 text-xs text-neutral-400">
+          Classifier-driven with auto-analysis
+          <% if @incident_scope == :global %>
+            • showing global feed (current shard has no incidents)
+          <% end %>
+        </div>
         <div class="mt-3 space-y-2">
           <% @incidents.each do |i| %>
             <div class="rounded-xl border border-neutral-900 px-4 py-3">
               <div class="text-sm font-medium"><%= i.title %></div>
-              <div class="mt-1 text-xs text-neutral-400"><%= i.severity_label %> • <%= i.status %> • <%= time_ago_in_words(i.created_at) %> ago</div>
+              <div class="mt-1 text-xs text-neutral-400">
+                <%= i.severity_label %> • <%= i.status %> • <%= time_ago_in_words(i.created_at) %> ago
+                <% if i.shard&.name.present? %>
+                  • <span class="text-neutral-300"><%= i.shard.name %></span>
+                <% end %>
+              </div>
               <% if i.context&.dig("suggested_runbooks").present? %>
                 <div class="mt-2 flex flex-wrap gap-1">
                   <% i.context["suggested_runbooks"].first(2).each do |rb| %>
-                    <a href="/runbooks/<%= rb['slug'] %>" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <a
+                      href="/runbooks/<%= rb['slug'] %>?incident_id=<%= i.id %>"
+                      class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                    >
                       <%= rb['title'] %>
                     </a>
                   <% end %>
@@ -123,7 +136,9 @@
             </div>
           <% end %>
           <% if @incidents.empty? %>
-            <div class="text-sm text-neutral-500">No incidents yet.</div>
+            <div class="text-sm text-neutral-500">
+              No incidents yet. Trigger `make gameday` or use Chaos + Evaluate to generate incident records.
+            </div>
           <% end %>
         </div>
       </div>
@@ -131,12 +146,22 @@
       <%# Audit Trail %>
       <div class="rounded-2xl border border-neutral-900 bg-neutral-950/60 px-6 py-6">
         <div class="text-sm font-semibold">Audit Trail</div>
-        <div class="mt-1 text-xs text-neutral-400">Overrides require justification</div>
+        <div class="mt-1 text-xs text-neutral-400">
+          Overrides require justification
+          <% if @audit_scope == :global %>
+            • showing global feed (current shard has no audit entries)
+          <% end %>
+        </div>
         <div class="mt-3 space-y-2">
           <% @audit_logs.each do |a| %>
             <div class="rounded-xl border border-neutral-900 px-4 py-3">
               <div class="text-sm font-medium"><%= a.action %></div>
-              <div class="mt-1 text-xs text-neutral-400"><%= a.actor %> • <%= time_ago_in_words(a.created_at) %> ago</div>
+              <div class="mt-1 text-xs text-neutral-400">
+                <%= a.actor %> • <%= time_ago_in_words(a.created_at) %> ago
+                <% if a.shard&.name.present? %>
+                  • <span class="text-neutral-300"><%= a.shard.name %></span>
+                <% end %>
+              </div>
               <div class="mt-2 text-xs text-neutral-300"><%= a.justification %></div>
             </div>
           <% end %>
