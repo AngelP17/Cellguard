@@ -22,6 +22,7 @@ module Api
       shard_name = params.fetch(:shard, "shard-default")
 
       result = AgentScheduler.run_agent_on_shard(agent_name, shard_name)
+      broadcast_status_update!
 
       if result
         render json: {
@@ -66,13 +67,21 @@ module Api
     # POST /api/agents/:name/toggle
     def toggle
       agent_name = params.fetch(:name)
-      enabled = params.fetch(:enabled).to_s == "true"
+      enabled = ActiveModel::Type::Boolean.new.cast(params.fetch(:enabled))
 
       AgentConfig.toggle!(agent_name, enabled)
+      effective_enabled = AgentConfig.enabled?(agent_name)
+
+      ActionCable.server.broadcast("agent_activity", {
+        type: "agent_toggled",
+        agent: agent_name,
+        enabled: effective_enabled
+      })
+      broadcast_status_update!
 
       render json: {
         agent: agent_name,
-        enabled: AgentConfig.enabled?(agent_name)
+        enabled: effective_enabled
       }
     end
 
@@ -82,6 +91,14 @@ module Api
       return true unless params.key?(:async)
 
       ActiveModel::Type::Boolean.new.cast(params[:async])
+    end
+
+    def broadcast_status_update!
+      ActionCable.server.broadcast("agent_activity", {
+        type: "status_update",
+        status: AgentScheduler.status,
+        recent_activity: AgentScheduler.recent_activity(limit: 10)
+      })
     end
   end
 end

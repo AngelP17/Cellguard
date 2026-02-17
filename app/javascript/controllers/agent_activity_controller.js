@@ -77,22 +77,19 @@ export default class extends Controller {
     }
     
     try {
-      if (this.channel) {
-        this.channel.perform("trigger_agent", {
-          agent: agentName,
-          shard: "shard-default"
-        })
-      } else {
-        await this.runViaHttp(agentName)
-      }
+      await this.runViaHttp(agentName)
     } catch (error) {
       this.showNotification(`Run failed: ${error.message}`, "error")
+      this.setButtonBusy(button, false)
+      button.className = this.runButtonClasses(enabledByServer)
+      button.textContent = enabledByServer ? "Run" : "Enable first"
       return
     }
 
     // Optimistic UI update
     const previousLabel = button.textContent || "Run"
     this.setButtonBusy(button, true, "Running...")
+    this.refresh()
     
     setTimeout(() => {
       if (!button.isConnected) {
@@ -120,29 +117,16 @@ export default class extends Controller {
     this.setButtonBusy(button, true, nextEnabled ? "Enabling..." : "Disabling...")
 
     try {
-      if (this.channel) {
-        this.channel.perform("toggle_agent", {
-          agent: agentName,
-          enabled: nextEnabled
-        })
-      } else {
-        await this.toggleViaHttp(agentName, nextEnabled)
-        this.refresh()
-      }
+      const payload = await this.toggleViaHttp(agentName, nextEnabled)
+      const effectiveEnabled = payload && payload.enabled === true
+      this.applyAgentEnabledState(agentName, effectiveEnabled)
+      this.showNotification(`${agentName} ${effectiveEnabled ? "enabled" : "disabled"}`)
     } catch (error) {
       this.showNotification(`Toggle failed: ${error.message}`, "error")
+      this.applyAgentEnabledState(agentName, currentlyEnabled)
+    } finally {
       this.refresh()
     }
-
-    setTimeout(() => {
-      if (!button.isConnected) {
-        return
-      }
-
-      if (button.textContent === "Enabling..." || button.textContent === "Disabling...") {
-        this.refresh()
-      }
-    }, 1200)
   }
 
   refresh() {
@@ -206,6 +190,46 @@ export default class extends Controller {
         chaosHint.style.display = agent.enabled ? "none" : ""
       }
     })
+  }
+
+  applyAgentEnabledState(agentName, enabled) {
+    const card = this.element.querySelector(`[data-agent-key=\"${agentName}\"]`)
+    if (!card) {
+      return
+    }
+
+    card.dataset.agentEnabled = enabled ? "true" : "false"
+
+    const badge = card.querySelector("[data-agent-role='badge']")
+    if (badge) {
+      badge.textContent = enabled ? "Enabled" : "Disabled"
+      badge.className = `text-[10px] px-2 py-0.5 rounded-full border ${
+        enabled
+          ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+          : "bg-neutral-800 text-neutral-400 border-neutral-700"
+      }`
+    }
+
+    const runButton = card.querySelector("[data-agent-role='run']")
+    if (runButton) {
+      runButton.dataset.enabled = enabled ? "true" : "false"
+      runButton.disabled = !enabled
+      runButton.textContent = enabled ? "Run" : "Enable first"
+      runButton.className = this.runButtonClasses(enabled)
+    }
+
+    const toggleButton = card.querySelector("[data-agent-role='toggle']")
+    if (toggleButton) {
+      toggleButton.dataset.enabled = enabled ? "true" : "false"
+      toggleButton.disabled = false
+      toggleButton.textContent = enabled ? "Disable" : "Enable"
+      toggleButton.className = this.toggleButtonClasses(enabled)
+    }
+
+    const chaosHint = card.querySelector("[data-agent-role='chaos-hint']")
+    if (chaosHint) {
+      chaosHint.style.display = enabled ? "none" : ""
+    }
   }
 
   updateActivity(activity) {
