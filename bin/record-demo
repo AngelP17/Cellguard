@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# Record a terminal demo using asciinema
+# Usage: bin/record-demo
+# Then upload to asciinema.org and embed in README
+
+set -euo pipefail
+
+echo "CellGuard Demo Recording Script"
+echo "================================"
+echo ""
+echo "This will record a terminal session demonstrating:"
+echo "1. Gate check (open)"
+echo "2. Inject failures"
+echo "3. Evaluate"
+echo "4. Gate locked (423)"
+echo "5. Dashboard view"
+echo ""
+echo "Requirements: asciinema (brew install asciinema)"
+echo ""
+
+if ! command -v asciinema &> /dev/null; then
+    echo "Error: asciinema not installed. Run: brew install asciinema"
+    exit 1
+fi
+
+HOST="${HOST:-https://cellguard-demo.fly.dev}"
+echo "Recording demo against: $HOST"
+echo ""
+echo "Press Enter to start recording..."
+read
+
+asciinema rec \
+    --title "CellGuard Demo - Release Gate Enforcement" \
+    --command "
+echo '=== CellGuard Live Demo ===' && \
+echo '' && \
+echo 'Step 1: Check gate status (starts open)' && \
+curl -s $HOST/api/release-gate/check?shard=shard-default | jq . && \
+echo '' && \
+sleep 2 && \
+echo 'Step 2: Inject failures (simulates service degradation)' && \
+curl -s -X POST $HOST/api/inject-failures \
+  -H 'Content-Type: application/json' \
+  -d '{\"shard\":\"shard-default\",\"error_rate\":0.15,\"total\":1000}' | jq . && \
+echo '' && \
+sleep 2 && \
+echo 'Step 3: Evaluate budget (processes failure signal)' && \
+curl -s -X POST $HOST/api/evaluate \
+  -H 'Content-Type: application/json' \
+  -d '{\"shard\":\"shard-default\",\"window_minutes\":60}' | jq . && \
+echo '' && \
+sleep 2 && \
+echo 'Step 4: Gate is now LOCKED (HTTP 423)' && \
+curl -s -w '\\nHTTP Status: %{http_code}\\n' $HOST/api/release-gate/check?shard=shard-default && \
+echo '' && \
+echo 'Step 5: View dashboard at' && \
+echo '$HOST/dashboard' && \
+echo '' && \
+echo 'Demo complete!'
+" \
+    docs/demo.cast
+
+echo ""
+echo "Recording saved to: docs/demo.cast"
+echo ""
+echo "Upload to asciinema.org:"
+echo "  asciinema upload docs/demo.cast"
+echo ""
+echo "Or convert to GIF:"
+echo "  asciicast2gif docs/demo.cast docs/demo.gif"
