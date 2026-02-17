@@ -23,7 +23,7 @@ if ! command -v asciinema &> /dev/null; then
     exit 1
 fi
 
-HOST="${HOST:-https://cellguard-demo.fly.dev}"
+HOST="${HOST:-http://localhost:3000}"
 echo "Recording demo against: $HOST"
 echo ""
 echo "Press Enter to start recording..."
@@ -32,7 +32,7 @@ read
 asciinema rec \
     --title "CellGuard Demo - Release Gate Enforcement" \
     --command "
-echo '=== CellGuard Live Demo ===' && \
+echo '=== CellGuard Local Demo ===' && \
 echo '' && \
 echo 'Step 1: Check gate status (starts open)' && \
 curl -s $HOST/api/release-gate/check?shard=shard-default | jq . && \

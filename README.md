@@ -1,8 +1,7 @@
 # CellGuard
- 
+
 > **Watch it work** (30 seconds): See the release gate flip from open → locked after chaos injection
 
-[![CellGuard Demo](https://img.shields.io/badge/Demo-Live-green)](https://cellguard-demo.fly.dev)
 [![CI Gate Proof](https://github.com/AngelP17/Cellguard/actions/workflows/gate-proof.yml/badge.svg)](https://github.com/AngelP17/Cellguard/actions/workflows/gate-proof.yml)
 
 CellGuard is a reliability control plane that enforces release policy from live operational signals.
@@ -30,38 +29,37 @@ flowchart LR
 
 ---
 
-## 🚀 Try the Live Demo (No Install Required)
+## 🚀 Run The Local Demo (30 Seconds)
 
-**URL**: [https://cellguard-demo.fly.dev](https://cellguard-demo.fly.dev)
+CellGuard is currently documented as local-first (no public hosted demo link).
+Use the local stack:
 
-The demo is a fully running instance with:
-- Pre-configured shards and error budgets
-- Autonomous agents running every 60 seconds
-- Chaos endpoints enabled (safe, auto-healing)
-- Real-time WebSocket activity feed
+```bash
+ALLOW_DEMO_ENDPOINTS=true CLASSIFIER_STUB=true bin/run-all
+```
 
 ### Quick Demo Flow (30 seconds)
 
 ```bash
 # 1. Check gate status (starts open)
-curl https://cellguard-demo.fly.dev/api/release-gate/check?shard=shard-default
+curl http://localhost:3000/api/release-gate/check?shard=shard-default
 
 # 2. Inject failures (simulates degraded service)
-curl -X POST https://cellguard-demo.fly.dev/api/inject-failures \
+curl -X POST http://localhost:3000/api/inject-failures \
   -H "Content-Type: application/json" \
   -d '{"shard":"shard-default","error_rate":0.15,"total":1000}'
 
 # 3. Evaluate budget (processes the failure signal)
-curl -X POST https://cellguard-demo.fly.dev/api/evaluate \
+curl -X POST http://localhost:3000/api/evaluate \
   -H "Content-Type: application/json" \
   -d '{"shard":"shard-default","window_minutes":60}'
 
 # 4. Gate is now LOCKED (HTTP 423)
-curl -v https://cellguard-demo.fly.dev/api/release-gate/check?shard=shard-default
-# → HTTP/2 423 (Locked)
+curl -v http://localhost:3000/api/release-gate/check?shard=shard-default
+# → HTTP/1.1 423 Locked
 
 # 5. View the dashboard
-open https://cellguard-demo.fly.dev/dashboard
+open http://localhost:3000/dashboard
 ```
 
 **What you'll see**:
@@ -73,12 +71,7 @@ open https://cellguard-demo.fly.dev/dashboard
 
 ## 👀 UI Entry Points
 
-You can view the project UI at:
-- Marketing/home: [https://cellguard-demo.fly.dev/](https://cellguard-demo.fly.dev/)
-- Main control plane dashboard: [https://cellguard-demo.fly.dev/dashboard](https://cellguard-demo.fly.dev/dashboard)
-- Incidents list: [https://cellguard-demo.fly.dev/incidents](https://cellguard-demo.fly.dev/incidents)
-
-Local equivalents (when running locally):
+When running locally:
 - `http://localhost:3000/`
 - `http://localhost:3000/dashboard`
 - `http://localhost:3000/incidents`
@@ -90,20 +83,6 @@ make go-ui-smoke
 ```
 
 This writes a screenshot to `tmp/ui-dashboard.png`.
-
----
-
-## 📹 Video Demo (For Recruiters/Sharing)
-
-Don't want to run commands? Watch this 60-second walkthrough:
-
-[![CellGuard Walkthrough](https://img.youtube.com/vi/YOUR_VIDEO_ID/0.jpg)](https://youtu.be/YOUR_VIDEO_ID)
-
-*(Replace with actual video link once recorded)*
-
-**Or view the GIF**:
-
-![CellGuard Demo GIF](./docs/demo.gif)
 
 ---
 
@@ -238,26 +217,8 @@ This deterministic script proves the policy enforcement:
 
 ## 🚢 Deployment
 
-### Fly.io (Recommended)
-
-```bash
-# Setup (one time)
-flyctl auth login
-flyctl launch --name cellguard-demo
-
-# Deploy
-flyctl deploy
-
-# Set secrets
-flyctl secrets set ALLOW_DEMO_ENDPOINTS=true CLASSIFIER_STUB=true
-```
-
-### Auto-Deploy from GitHub
-
-Pushes to `main` automatically deploy via `.github/workflows/deploy-fly.yml`.
-
-Required GitHub secret:
-- `FLY_API_TOKEN` - From `flyctl auth token`
+Public hosting docs are intentionally deferred until a production-ready demo/video is published.
+Current source of truth is local execution + CI gate proof.
 
 ---
 
@@ -270,8 +231,9 @@ gantt
     section Core
     Runnable MVP and gate proof       :done, c1, 2026-02-01, 7d
     Sidekiq scheduled parallel agents :done, c2, 2026-02-08, 5d
-    Live deployment (Fly.io)          :done, c3, 2026-02-17, 2d
+    UX + SRE scorecards + runbook nav :done, c3, 2026-02-17, 2d
     section Next
+    Public demo/video publishing      :n0, 2026-02-20, 4d
     Prometheus /metrics endpoint      :active, n1, 2026-02-18, 3d
     AI copilot findings surface       :n2, 2026-03-01, 10d
 ```
@@ -301,7 +263,7 @@ gantt
 
 > CellGuard is a reliability control plane that prevents bad deploys by monitoring error budgets in real-time. It features autonomous agents that predict issues before they happen, chaos engineering for resilience validation, and a 423 Locked gate that CI systems can query.
 >
-> **Try it**: https://cellguard-demo.fly.dev
+> **Run it locally**: `ALLOW_DEMO_ENDPOINTS=true CLASSIFIER_STUB=true bin/run-all`
 
 **Key technical decisions**:
 - Rails 7.1 + Hotwire for rapid UI development
