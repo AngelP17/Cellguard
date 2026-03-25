@@ -76,6 +76,14 @@ When running locally:
 - `http://localhost:3000/dashboard`
 - `http://localhost:3000/incidents`
 
+## 📸 Screenshots
+
+![Landing Page](./screenshots/01-landing-page.png)
+
+![Dashboard](./screenshots/02-dashboard.png)
+
+---
+
 Automated UI capture (Go Rod + stealth):
 
 ```bash
