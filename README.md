@@ -78,7 +78,6 @@ When running locally:
 
 ## 📸 Screenshots
 
-![Landing Page](./screenshots/01-landing-page.png)
 
 ![Dashboard](./screenshots/02-dashboard.png)
 
