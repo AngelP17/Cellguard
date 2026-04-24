@@ -81,8 +81,7 @@ When running locally:
 ### Landing Page
 ![Landing Page](./screenshots/landing.png)
 
-### Dashboard — Decision Cockpit
-![Dashboard](./screenshots/dashboard.png)
+
 
 ### Runbook — Guided Operator Workflow
 ![Runbook](./screenshots/runbook.png)
