@@ -84,9 +84,6 @@ When running locally:
 ### Dashboard — Decision Cockpit
 ![Dashboard](./screenshots/dashboard.png)
 
-### Incidents — Triage Workspace
-![Incidents](./screenshots/incidents.png)
-
 ### Runbook — Guided Operator Workflow
 ![Runbook](./screenshots/runbook.png)
 
