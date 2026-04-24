@@ -2,9 +2,10 @@ module Ui
   class ShellComponent < ViewComponent::Base
     include HeroiconsHelper
 
-    def initialize(title:, subtitle: nil)
+    def initialize(title:, subtitle: nil, eyebrow: "CELLGUARD MISSION CONTROL")
       @title = title
       @subtitle = subtitle
+      @eyebrow = eyebrow
     end
 
     def nav_items
@@ -24,7 +25,6 @@ module Ui
     def active_path?(prefix)
       path = helpers.request&.path.to_s
       return true if path == prefix
-
       path.start_with?("#{prefix}/")
     end
   end

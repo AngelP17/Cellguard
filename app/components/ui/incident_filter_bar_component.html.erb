@@ -1,0 +1,29 @@
+<div class="cg-panel" data-controller="incident-filter">
+  <div class="p-2 flex items-center gap-2 flex-wrap">
+    <div class="cg-filter-bar">
+      <% Ui::IncidentFilterBarComponent::FILTERS.each do |filter| %>
+        <button
+          type="button"
+          class="cg-filter-btn <%= 'is-active' if filter[:key] == @active_filter %>"
+          data-action="click->incident-filter#filter"
+          data-filter="<%= filter[:key] %>"
+        >
+          <%= filter[:label] %>
+        </button>
+      <% end %>
+    </div>
+
+    <div class="flex-1"></div>
+
+    <input
+      type="text"
+      class="cg-search"
+      placeholder="Search incidents..."
+      data-action="input->incident-filter#search"
+    />
+
+    <button type="button" class="cg-btn cg-btn--sm" data-action="click->incident-filter#refresh">
+      ↻ Refresh
+    </button>
+  </div>
+</div>

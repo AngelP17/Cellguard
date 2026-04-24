@@ -1,89 +1,193 @@
 <%= render Ui::ShellComponent.new(
   title: "Incidents",
-  subtitle: "Classifier-driven incident creation with strict taxonomy"
+  subtitle: "Classifier-driven incident triage workspace",
+  eyebrow: "TRIAGE WORKSPACE"
 ) do %>
 
-  <div class="rounded-2xl border border-neutral-900 bg-neutral-950/60 px-6 py-6">
-    <div class="mb-4 flex items-center justify-between gap-4">
-      <div class="text-sm text-neutral-400">
-        Incident feed includes classifier signal, severity assessment, and suggested runbooks.
+  <% featured = @incidents.first %>
+
+  <div class="space-y-3" data-gsap="incidents-page">
+    <%# Filter Bar %>
+    <%= render Ui::IncidentFilterBarComponent.new %>
+
+    <%# Metrics Row — horizontal %>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-2" data-gsap="incident-metrics">
+      <div class="cg-scorecard">
+        <div class="cg-scorecard__label">Open</div>
+        <div class="cg-scorecard__value"><%= @incidents.count { |i| i.status.to_s.downcase != "resolved" } %></div>
       </div>
-      <a href="/dashboard" class="cg-btn cg-btn--secondary">Open Dashboard</a>
+      <div class="cg-scorecard">
+        <div class="cg-scorecard__label">Critical</div>
+        <div class="cg-scorecard__value" style="color: var(--cg-danger);">
+          <%= @incidents.count { |i| (i.context&.dig("severity_assessment", "level") || i.severity_label).to_s.downcase == "critical" && i.status.to_s.downcase != "resolved" } %>
+        </div>
+      </div>
+      <div class="cg-scorecard">
+        <div class="cg-scorecard__label">MTTA (30d)</div>
+        <div class="cg-scorecard__value">—</div>
+        <div class="cg-scorecard__meta">Mean time to acknowledge</div>
+      </div>
+      <div class="cg-scorecard">
+        <div class="cg-scorecard__label">MTTR (30d)</div>
+        <div class="cg-scorecard__value">—</div>
+        <div class="cg-scorecard__meta">Mean time to resolve</div>
+      </div>
     </div>
 
-    <div class="space-y-3">
-      <% @incidents.each do |incident| %>
-        <% context = incident.context || {} %>
-        <% classifier = context["classifier"] || {} %>
-        <% suggested_runbooks = Array(context["suggested_runbooks"]) %>
-        <% severity = context.dig("severity_assessment", "level").presence || incident.severity_label %>
-        <% response_sla = context.dig("severity_assessment", "response_time_sla") %>
-        <% likely_cause = Array(context["likely_causes"]).first&.dig("description") %>
+    <%# Main Workspace — Two Column %>
+    <div class="grid gap-3 md:grid-cols-3">
+      <%# Left: Incident List %>
+      <div class="md:col-span-2 space-y-2" data-gsap="incident-list">
+        <% if featured %>
+          <%= render Ui::IncidentCardComponent.new(incident: featured, featured: true) %>
+        <% end %>
 
-        <article id="incident-<%= incident.id %>" class="rounded-xl border border-neutral-900 px-4 py-4">
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <div class="text-sm font-semibold"><%= incident.title %></div>
-              <div class="mt-1 text-xs text-neutral-400">
-                Severity: <span class="text-neutral-200"><%= severity %></span> •
-                Team: <span class="text-neutral-200"><%= incident.team_label %></span> •
-                Service: <span class="text-neutral-200"><%= incident.service_label %></span> •
-                Status: <span class="text-neutral-200"><%= incident.status %></span>
+        <% @incidents.drop(1).each do |incident| %>
+          <%= render Ui::IncidentCardComponent.new(incident: incident, featured: false) %>
+        <% end %>
+
+        <% if @incidents.empty? %>
+          <div class="cg-panel p-4 text-center">
+            <div class="text-sm" style="color: var(--cg-muted);">No incidents recorded.</div>
+            <div class="mt-1 text-xs" style="color: var(--cg-muted-dim);">Run <code class="font-mono">make gameday</code> to generate.</div>
+          </div>
+        <% end %>
+      </div>
+
+      <%# Right: Sidebar %>
+      <div class="space-y-3" data-gsap="incident-sidebar">
+        <% if featured %>
+          <% ctx = featured.context || {} %>
+          <% sev = ctx.dig("severity_assessment", "level").presence || featured.severity_label %>
+
+          <%# Incident Details %>
+          <div class="cg-panel">
+            <div class="cg-panel-header">
+              <div class="cg-panel-title">Incident Details</div>
+            </div>
+            <div class="p-3 space-y-2 text-xs">
+              <div class="flex justify-between">
+                <span style="color: var(--cg-muted-dim);">Status</span>
+                <span class="font-medium" style="color: var(--cg-text);"><%= featured.status %></span>
               </div>
-              <% if response_sla.present? %>
-                <div class="mt-1 text-xs text-neutral-500">
-                  Response SLA: <span class="text-neutral-300"><%= response_sla %></span>
+              <div class="flex justify-between">
+                <span style="color: var(--cg-muted-dim);">Severity</span>
+                <span class="font-medium <%= 'is-danger' if sev.to_s.downcase == 'critical' %>" style="color: var(--cg-text);"><%= sev %></span>
+              </div>
+              <div class="flex justify-between">
+                <span style="color: var(--cg-muted-dim);">Team</span>
+                <span style="color: var(--cg-text);"><%= featured.team_label %></span>
+              </div>
+              <div class="flex justify-between">
+                <span style="color: var(--cg-muted-dim);">Service</span>
+                <span style="color: var(--cg-text);"><%= featured.service_label %></span>
+              </div>
+              <div class="flex justify-between">
+                <span style="color: var(--cg-muted-dim);">Shard</span>
+                <span class="font-mono" style="color: var(--cg-text);"><%= featured.shard&.name || "—" %></span>
+              </div>
+              <div class="flex justify-between">
+                <span style="color: var(--cg-muted-dim);">Created</span>
+                <span class="font-mono" style="color: var(--cg-muted);"><%= featured.created_at.utc.strftime("%Y-%m-%d %H:%M UTC") %></span>
+              </div>
+            </div>
+          </div>
+
+          <%# Actions %>
+          <div class="cg-panel">
+            <div class="cg-panel-header">
+              <div class="cg-panel-title">Actions</div>
+            </div>
+            <div class="p-3 space-y-1.5">
+              <% if ctx["suggested_runbooks"].present? %>
+                <a href="/runbooks/<%= ctx['suggested_runbooks'].first['slug'] %>?incident_id=<%= featured.id %>" class="cg-btn cg-btn--primary w-full">View Runbook</a>
+              <% else %>
+                <a href="/runbooks/gameday?incident_id=<%= featured.id %>" class="cg-btn cg-btn--primary w-full">View Runbook</a>
+              <% end %>
+              <button type="button" class="cg-btn cg-btn--secondary w-full">Acknowledge</button>
+              <button type="button" class="cg-btn cg-btn--danger w-full">Escalate</button>
+              <button type="button" class="cg-btn cg-btn--secondary w-full">Resolve</button>
+              <button type="button" class="cg-btn cg-btn--sm w-full" style="color: var(--cg-muted);">Add Note</button>
+            </div>
+          </div>
+
+          <%# SLA & Impact %>
+          <div class="cg-panel">
+            <div class="cg-panel-header">
+              <div class="cg-panel-title">SLA & Impact</div>
+            </div>
+            <div class="p-3 space-y-2 text-xs">
+              <div class="flex justify-between">
+                <span style="color: var(--cg-muted-dim);">Response SLA</span>
+                <span class="font-mono" style="color: var(--cg-text);"><%= ctx.dig("severity_assessment", "response_time_sla") || "—" %></span>
+              </div>
+              <div class="flex justify-between">
+                <span style="color: var(--cg-muted-dim);">Affected Scope</span>
+                <span style="color: var(--cg-text);"><%= ctx.dig("affected_scope") || "—" %></span>
+              </div>
+              <div class="flex justify-between">
+                <span style="color: var(--cg-muted-dim);">Classifier</span>
+                <span style="color: var(--cg-text);"><%= ctx.dig("classifier", "reason") || "—" %></span>
+              </div>
+            </div>
+          </div>
+
+          <%# Activity Timeline %>
+          <div class="cg-panel">
+            <div class="cg-panel-header">
+              <div class="cg-panel-title">Activity</div>
+            </div>
+            <div class="p-3 space-y-2">
+              <div class="flex items-start gap-2">
+                <div class="w-1.5 h-1.5 rounded-full mt-1" style="background: var(--cg-info);"></div>
+                <div>
+                  <div class="text-xs" style="color: var(--cg-text);">Incident created by classifier</div>
+                  <div class="text-xs font-mono" style="color: var(--cg-muted-dim);"><%= time_ago_in_words(featured.created_at) %> ago</div>
                 </div>
-              <% end %>
-            </div>
-            <div class="text-xs text-neutral-500 whitespace-nowrap"><%= incident.created_at.utc.strftime("%Y-%m-%d %H:%M:%S UTC") %></div>
-          </div>
-
-          <div class="mt-3 grid gap-3 md:grid-cols-2">
-            <div class="rounded border border-neutral-900 bg-neutral-950/40 px-3 py-2">
-              <div class="text-xs text-neutral-500 uppercase tracking-wider">Classifier</div>
-              <div class="mt-1 text-sm text-neutral-200">
-                <%= classifier["reason"].presence || "No classifier reason captured" %>
               </div>
-              <% if classifier["action"].present? %>
-                <div class="mt-1 text-xs text-neutral-500">Action: <span class="text-neutral-300"><%= classifier["action"] %></span></div>
-              <% end %>
-            </div>
-
-            <div class="rounded border border-neutral-900 bg-neutral-950/40 px-3 py-2">
-              <div class="text-xs text-neutral-500 uppercase tracking-wider">Likely Cause</div>
-              <div class="mt-1 text-sm text-neutral-200">
-                <%= likely_cause.presence || "No likely-cause insight available yet." %>
+              <div class="flex items-start gap-2">
+                <div class="w-1.5 h-1.5 rounded-full mt-1" style="background: var(--cg-warn);"></div>
+                <div>
+                  <div class="text-xs" style="color: var(--cg-text);">Gate locked (423)</div>
+                  <div class="text-xs font-mono" style="color: var(--cg-muted-dim);"><%= time_ago_in_words(featured.created_at) %> ago</div>
+                </div>
+              </div>
+              <div class="flex items-start gap-2">
+                <div class="w-1.5 h-1.5 rounded-full mt-1" style="background: var(--cg-muted-dim);"></div>
+                <div>
+                  <div class="text-xs" style="color: var(--cg-muted);">Awaiting operator response</div>
+                  <div class="text-xs font-mono" style="color: var(--cg-muted-dim);">—</div>
+                </div>
               </div>
             </div>
           </div>
 
-          <% if suggested_runbooks.any? %>
-            <div class="mt-3 flex flex-wrap gap-2">
-              <% suggested_runbooks.first(3).each do |runbook| %>
-                <% slug = runbook["slug"].to_s %>
-                <% title = runbook["title"].presence || slug.humanize %>
-                <a href="/runbooks/<%= slug %>?incident_id=<%= incident.id %>" class="cg-chip">
-                  <%= title %>
-                </a>
-              <% end %>
+          <%# Policy Context %>
+          <div class="cg-panel">
+            <div class="cg-panel-header">
+              <div class="cg-panel-title">Policy Context</div>
             </div>
-          <% end %>
-
-          <% if context.present? %>
-            <details class="mt-3">
-              <summary class="text-xs text-neutral-400 cursor-pointer">Raw incident context</summary>
-              <pre class="mt-2 overflow-auto rounded-xl bg-neutral-950/60 p-3 text-xs text-neutral-300 border border-neutral-900"><%= JSON.pretty_generate(context) rescue context.to_json %></pre>
-            </details>
-          <% end %>
-        </article>
-      <% end %>
-
-      <% if @incidents.empty? %>
-        <div class="rounded-xl border border-neutral-900 bg-neutral-950/40 px-4 py-6 text-sm text-neutral-500">
-          No incidents recorded yet. Run <code class="text-neutral-200">make gameday</code> to generate a full incident + gate lock cycle.
-        </div>
-      <% end %>
+            <div class="p-3 space-y-1.5 text-xs">
+              <div class="flex justify-between">
+                <span style="color: var(--cg-muted-dim);">Gate enforced</span>
+                <span style="color: var(--cg-ok);">Yes</span>
+              </div>
+              <div class="flex justify-between">
+                <span style="color: var(--cg-muted-dim);">Override requires</span>
+                <span style="color: var(--cg-text);">Justification + Audit</span>
+              </div>
+              <div class="flex justify-between">
+                <span style="color: var(--cg-muted-dim);">Auto-runbook</span>
+                <span style="color: var(--cg-text);">Suggested</span>
+              </div>
+            </div>
+          </div>
+        <% else %>
+          <div class="cg-panel p-4 text-center">
+            <div class="text-sm" style="color: var(--cg-muted);">Select an incident to view details.</div>
+          </div>
+        <% end %>
+      </div>
     </div>
   </div>
 

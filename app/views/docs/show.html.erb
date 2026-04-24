@@ -1,44 +1,285 @@
-<%= render Ui::ShellComponent.new(title: @title, subtitle: "Docs are part of the product surface (runbooks + postmortems).") do %>
-  <div class="rounded-2xl border border-neutral-900 bg-neutral-950/60 px-6 py-6">
-    <div class="cg-doc-actions mb-4">
-      <a href="/dashboard#game-day" class="cg-btn cg-btn--primary">Run Game Day</a>
-      <a href="/dashboard" class="cg-btn cg-btn--secondary">Dashboard</a>
-      <a href="/incidents" class="cg-btn cg-btn--secondary">Incidents</a>
-    </div>
+<%= render Ui::ShellComponent.new(
+  title: @title,
+  subtitle: "Guided operator workflow",
+  eyebrow: "RUNBOOK"
+) do %>
 
+  <div class="space-y-3" data-gsap="runbook-page">
+    <%# A. Top Status Strip %>
+    <% if @incident.present? %>
+      <div class="cg-panel cg-glow-info">
+        <div class="p-2 flex flex-wrap items-center gap-x-5 gap-y-1">
+          <div>
+            <div style="font-size: 0.55rem; color: var(--cg-muted-dim); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;">Incident ID</div>
+            <div class="font-mono text-sm" style="color: var(--cg-text);">#<%= @incident.id %></div>
+          </div>
+          <div>
+            <div style="font-size: 0.55rem; color: var(--cg-muted-dim); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;">Severity</div>
+            <div class="text-sm font-bold" style="color: var(--cg-danger);"><%= @incident.severity_label %></div>
+          </div>
+          <div>
+            <div style="font-size: 0.55rem; color: var(--cg-muted-dim); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;">Shard</div>
+            <div class="font-mono text-sm" style="color: var(--cg-text);"><%= @incident.shard&.name || "—" %></div>
+          </div>
+          <div>
+            <div style="font-size: 0.55rem; color: var(--cg-muted-dim); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;">Service</div>
+            <div class="text-sm" style="color: var(--cg-text);"><%= @incident.service_label %></div>
+          </div>
+          <div>
+            <div style="font-size: 0.55rem; color: var(--cg-muted-dim); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;">Gate State</div>
+            <div class="text-sm font-bold" style="color: var(--cg-danger);">423 LOCKED</div>
+          </div>
+          <div>
+            <div style="font-size: 0.55rem; color: var(--cg-muted-dim); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;">Est. Completion</div>
+            <div class="font-mono text-sm" style="color: var(--cg-text);">~15m</div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <%# Runbook Tabs %>
     <% if @runbook_slugs.present? %>
-      <div class="cg-doc-tabs mb-4">
+      <div class="cg-filter-bar">
         <% @runbook_slugs.each do |runbook_slug| %>
           <% active = runbook_slug == @slug %>
-          <a
-            href="/runbooks/<%= runbook_slug %><%= @incident ? "?incident_id=#{@incident.id}" : "" %>"
-            class="cg-doc-tab <%= active ? "is-active" : "" %>"
-          >
+          <a href="/runbooks/<%= runbook_slug %><%= @incident ? "?incident_id=#{@incident.id}" : "" %>" class="cg-filter-btn <%= 'is-active' if active %>">
             <%= runbook_slug.humanize %>
           </a>
         <% end %>
       </div>
     <% end %>
 
+    <%# Incident Context Banner %>
     <% if @incident.present? %>
-      <div class="rounded-xl border border-neutral-800 bg-neutral-950/50 px-4 py-3 mb-4">
-        <div class="text-xs text-neutral-500 uppercase tracking-wider">Incident Context</div>
-        <div class="mt-1 text-sm text-neutral-200"><%= @incident.title %></div>
-        <div class="mt-1 text-xs text-neutral-400">
-          <%= @incident.severity_label %> • <%= @incident.status %> • <%= @incident.shard&.name %>
-        </div>
-        <div class="mt-2">
-          <a href="/incidents#incident-<%= @incident.id %>" class="cg-btn cg-btn--secondary">Back To Incident</a>
+      <div class="cg-panel cg-glow-danger">
+        <div class="p-2 flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <div style="font-size: 0.55rem; color: var(--cg-muted-dim); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;">Incident Context</div>
+            <div class="text-sm font-medium" style="color: var(--cg-text-bright);"><%= @incident.title %></div>
+            <div class="text-xs mt-0.5" style="color: var(--cg-muted);"><%= @incident.severity_label %> · <%= @incident.status %> · <%= @incident.shard&.name %></div>
+          </div>
+          <a href="/incidents#incident-<%= @incident.id %>" class="cg-btn cg-btn--sm cg-btn--secondary">Back To Incident</a>
         </div>
       </div>
     <% end %>
 
-    <article class="prose prose-invert max-w-none cg-doc-article">
-      <%= @html %>
-    </article>
+    <%# Main Layout: Two Columns %>
+    <div class="grid gap-3 md:grid-cols-3">
+      <%# Left: Runbook Steps %>
+      <div class="md:col-span-2 space-y-3">
+        <%# Runbook Stepper %>
+        <div class="cg-panel" data-gsap="runbook-checklist">
+          <div class="cg-panel-header">
+            <div class="cg-panel-title">Runbook Steps</div>
+            <span class="cg-decision-badge is-recommended">6 steps</span>
+          </div>
+          <div class="p-3">
+            <ul class="cg-stepper">
+              <li class="cg-stepper__item is-complete">
+                <div class="cg-stepper__num">1</div>
+                <div class="cg-stepper__content">
+                  <div class="flex items-center gap-2">
+                    <div class="cg-stepper__title">Confirm gate status</div>
+                    <span class="cg-stepper__badge is-complete">Done</span>
+                  </div>
+                  <div class="cg-stepper__desc">Verify the release gate is LOCKED (423). Check dashboard for current state.</div>
+                </div>
+              </li>
+              <li class="cg-stepper__item is-complete">
+                <div class="cg-stepper__num">2</div>
+                <div class="cg-stepper__content">
+                  <div class="flex items-center gap-2">
+                    <div class="cg-stepper__title">Inspect error budget</div>
+                    <span class="cg-stepper__badge is-complete">Done</span>
+                  </div>
+                  <div class="cg-stepper__desc">Confirm budget is at or below 0%. Review burn rate and consumption history.</div>
+                </div>
+              </li>
+              <li class="cg-stepper__item is-active">
+                <div class="cg-stepper__num">3</div>
+                <div class="cg-stepper__content">
+                  <div class="flex items-center gap-2">
+                    <div class="cg-stepper__title">Heal Redis connectivity</div>
+                    <span class="cg-stepper__badge is-active">In Progress</span>
+                  </div>
+                  <div class="cg-stepper__desc">Remove network partitions and restore Redis. Run chaos heal or manual recovery.</div>
+                </div>
+              </li>
+              <li class="cg-stepper__item">
+                <div class="cg-stepper__num">4</div>
+                <div class="cg-stepper__content">
+                  <div class="flex items-center gap-2">
+                    <div class="cg-stepper__title">Re-run evaluation</div>
+                    <span class="cg-stepper__badge is-pending">Pending</span>
+                  </div>
+                  <div class="cg-stepper__desc">Trigger budget re-evaluation. Wait for gate status to update.</div>
+                </div>
+              </li>
+              <li class="cg-stepper__item">
+                <div class="cg-stepper__num">5</div>
+                <div class="cg-stepper__content">
+                  <div class="flex items-center gap-2">
+                    <div class="cg-stepper__title">Verify gate reopened</div>
+                    <span class="cg-stepper__badge is-pending">Pending</span>
+                  </div>
+                  <div class="cg-stepper__desc">Confirm gate returns 200 OK. Validate SLO compliance before resuming deploys.</div>
+                </div>
+              </li>
+              <li class="cg-stepper__item">
+                <div class="cg-stepper__num">6</div>
+                <div class="cg-stepper__content">
+                  <div class="flex items-center gap-2">
+                    <div class="cg-stepper__title">Record outcome</div>
+                    <span class="cg-stepper__badge is-pending">Pending</span>
+                  </div>
+                  <div class="cg-stepper__desc">Close incident, document resolution, and verify audit log entry.</div>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
 
+        <%# Article Content %>
+        <div class="cg-panel">
+          <div class="p-3">
+            <article class="prose prose-invert max-w-none cg-doc-article">
+              <%= @html %>
+            </article>
+          </div>
+        </div>
+
+        <%# Lower Panels Row %>
+        <div class="grid gap-3 md:grid-cols-2">
+          <%# Preconditions %>
+          <div class="cg-panel">
+            <div class="cg-panel-header">
+              <div class="cg-panel-title">Preconditions</div>
+            </div>
+            <div class="p-3 space-y-1.5 text-xs" style="color: var(--cg-text);">
+              <div class="flex items-start gap-1.5">
+                <span style="color: var(--cg-ok);">✓</span>
+                <span>Gate must be LOCKED before starting recovery</span>
+              </div>
+              <div class="flex items-start gap-1.5">
+                <span style="color: var(--cg-ok);">✓</span>
+                <span>Incident record must exist with severity</span>
+              </div>
+              <div class="flex items-start gap-1.5">
+                <span style="color: var(--cg-ok);">✓</span>
+                <span>Chaos orchestrator disabled or in safe mode</span>
+              </div>
+            </div>
+          </div>
+
+          <%# Blast Radius %>
+          <div class="cg-panel">
+            <div class="cg-panel-header">
+              <div class="cg-panel-title">Blast Radius</div>
+            </div>
+            <div class="p-3 space-y-1.5 text-xs" style="color: var(--cg-text);">
+              <div class="flex justify-between">
+                <span style="color: var(--cg-muted-dim);">Shard</span>
+                <span class="font-mono"><%= @incident&.shard&.name || "shard-default" %></span>
+              </div>
+              <div class="flex justify-between">
+                <span style="color: var(--cg-muted-dim);">Service</span>
+                <span><%= @incident&.service_label || "—" %></span>
+              </div>
+              <div class="flex justify-between">
+                <span style="color: var(--cg-muted-dim);">Team</span>
+                <span><%= @incident&.team_label || "—" %></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <%# Verification Expected Outcomes %>
+        <div class="cg-panel">
+          <div class="cg-panel-header">
+            <div class="cg-panel-title">Expected Outcomes</div>
+          </div>
+          <div class="p-3 grid gap-2 md:grid-cols-2 text-xs" style="color: var(--cg-text);">
+            <div class="flex items-start gap-1.5">
+              <span style="color: var(--cg-muted-dim);">1.</span>
+              <span>Budget remaining shows > 0% after recovery</span>
+            </div>
+            <div class="flex items-start gap-1.5">
+              <span style="color: var(--cg-muted-dim);">2.</span>
+              <span>Gate transitions from 423 to 200 OK</span>
+            </div>
+            <div class="flex items-start gap-1.5">
+              <span style="color: var(--cg-muted-dim);">3.</span>
+              <span>Audit log records override justification</span>
+            </div>
+            <div class="flex items-start gap-1.5">
+              <span style="color: var(--cg-muted-dim);">4.</span>
+              <span>Incident status updated to resolved</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <%# Right: Operator Panel %>
+      <div class="space-y-3">
+        <%# Operator Panel %>
+        <div class="cg-panel" data-gsap="operator-panel">
+          <div class="cg-panel-header">
+            <div class="cg-panel-title">Operator Panel</div>
+          </div>
+          <div class="p-3 space-y-3">
+            <% if @incident.present? %>
+              <div>
+                <div style="font-size: 0.55rem; color: var(--cg-muted-dim); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;">Incident Summary</div>
+                <div class="text-sm mt-0.5" style="color: var(--cg-text-bright);"><%= @incident.title %></div>
+              </div>
+              <div>
+                <div style="font-size: 0.55rem; color: var(--cg-muted-dim); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;">Suggested Next Action</div>
+                <div class="text-sm mt-0.5" style="color: var(--cg-info);">Heal Redis and re-run evaluation</div>
+              </div>
+            <% end %>
+
+            <div class="pt-2 border-t space-y-1.5" style="border-color: var(--cg-border);">
+              <button type="button" class="cg-btn cg-btn--primary w-full" data-controller="gameday" data-action="click->gameday#heal">Execute Heal Step</button>
+              <button type="button" class="cg-btn cg-btn--secondary w-full">Mark Complete</button>
+              <button type="button" class="cg-btn cg-btn--danger w-full">Roll Back</button>
+              <button type="button" class="cg-btn cg-btn--sm w-full" style="color: var(--cg-muted);">Add Note</button>
+            </div>
+          </div>
+        </div>
+
+        <%# Notes & Audit %>
+        <div class="cg-panel">
+          <div class="cg-panel-header">
+            <div class="cg-panel-title">Notes & Audit</div>
+          </div>
+          <div class="p-3">
+            <div class="text-xs" style="color: var(--cg-muted-dim);">No notes recorded.</div>
+          </div>
+        </div>
+
+        <%# Linked Resources %>
+        <div class="cg-panel">
+          <div class="cg-panel-header">
+            <div class="cg-panel-title">Linked Resources</div>
+          </div>
+          <div class="p-3 space-y-1.5">
+            <a href="/dashboard" class="flex items-center gap-1.5 text-xs hover:text-neutral-200 transition-colors" style="color: var(--cg-muted);">
+              <span>→</span> Dashboard
+            </a>
+            <a href="/incidents" class="flex items-center gap-1.5 text-xs hover:text-neutral-200 transition-colors" style="color: var(--cg-muted);">
+              <span>→</span> Incident Feed
+            </a>
+            <a href="/dashboard#game-day" class="flex items-center gap-1.5 text-xs hover:text-neutral-200 transition-colors" style="color: var(--cg-muted);">
+              <span>→</span> Chaos Controls
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# Navigation %>
     <% if @prev_runbook_slug.present? || @next_runbook_slug.present? %>
-      <div class="mt-6 flex items-center justify-between gap-3">
+      <div class="flex items-center justify-between gap-2">
         <div>
           <% if @prev_runbook_slug.present? %>
             <a href="/runbooks/<%= @prev_runbook_slug %><%= @incident ? "?incident_id=#{@incident.id}" : "" %>" class="cg-btn cg-btn--secondary">
@@ -55,43 +296,64 @@
         </div>
       </div>
     <% end %>
-  </div>
 
-  <div class="mt-6 grid gap-6 md:grid-cols-2">
-    <div class="rounded-2xl border border-neutral-900 bg-neutral-950/60 px-6 py-6">
-      <div class="text-sm font-semibold">Recent Incidents</div>
-      <div class="mt-1 text-xs text-neutral-400">Navigate directly into incident context</div>
-      <div class="mt-3 space-y-2">
-        <% @recent_incidents.to_a.each do |incident| %>
-          <div class="rounded-xl border border-neutral-900 px-4 py-3">
-            <div class="text-sm font-medium"><%= incident.title %></div>
-            <div class="mt-1 text-xs text-neutral-400"><%= incident.severity_label %> • <%= time_ago_in_words(incident.created_at) %> ago</div>
-            <div class="mt-2">
-              <a href="/incidents#incident-<%= incident.id %>" class="cg-btn cg-btn--secondary">Open Incident</a>
+    <%# Auditability Footer Strip %>
+    <div class="cg-panel" style="background: rgba(0,0,0,0.3);">
+      <div class="p-2 flex items-center justify-between gap-3 flex-wrap text-xs" style="color: var(--cg-muted-dim);">
+        <div class="flex items-center gap-3">
+          <span>Runbook: <span class="font-mono" style="color: var(--cg-muted);"><%= @slug %></span></span>
+          <% if @incident %>
+            <span>Incident: <span class="font-mono" style="color: var(--cg-muted);">#<%= @incident.id %></span></span>
+          <% end %>
+        </div>
+        <div class="flex items-center gap-3">
+          <span>All actions are audited</span>
+          <span>·</span>
+          <span>Policy enforcement active</span>
+        </div>
+      </div>
+    </div>
+
+    <%# Recent Incidents + Audit Trail %>
+    <div class="grid gap-3 md:grid-cols-2">
+      <div class="cg-panel">
+        <div class="cg-panel-header">
+          <div class="cg-panel-title">Recent Incidents</div>
+        </div>
+        <div class="p-2 space-y-2">
+          <% @recent_incidents.to_a.first(3).each do |incident| %>
+            <div class="cg-evidence" style="padding: 0.5rem 0.6rem;">
+              <div class="text-sm font-medium"><%= incident.title %></div>
+              <div class="text-xs mt-0.5" style="color: var(--cg-muted);"><%= incident.severity_label %> · <%= time_ago_in_words(incident.created_at) %> ago</div>
+              <div class="mt-1.5">
+                <a href="/incidents#incident-<%= incident.id %>" class="cg-btn cg-btn--sm cg-btn--secondary">Open</a>
+              </div>
             </div>
-          </div>
-        <% end %>
-        <% if @recent_incidents.to_a.empty? %>
-          <div class="text-sm text-neutral-500">No incidents yet.</div>
-        <% end %>
+          <% end %>
+          <% if @recent_incidents.to_a.empty? %>
+            <div class="text-xs" style="color: var(--cg-muted); padding: 0.5rem;">No incidents.</div>
+          <% end %>
+        </div>
       </div>
-    </div>
 
-    <div class="rounded-2xl border border-neutral-900 bg-neutral-950/60 px-6 py-6">
-      <div class="text-sm font-semibold">Audit Trail</div>
-      <div class="mt-1 text-xs text-neutral-400">Recent policy and agent decisions</div>
-      <div class="mt-3 space-y-2">
-        <% @recent_audit_logs.to_a.each do |audit| %>
-          <div class="rounded-xl border border-neutral-900 px-4 py-3">
-            <div class="text-sm font-medium"><%= audit.action %></div>
-            <div class="mt-1 text-xs text-neutral-400"><%= audit.actor %> • <%= time_ago_in_words(audit.created_at) %> ago</div>
-            <div class="mt-2 text-xs text-neutral-300"><%= audit.justification %></div>
-          </div>
-        <% end %>
-        <% if @recent_audit_logs.to_a.empty? %>
-          <div class="text-sm text-neutral-500">No audit events yet.</div>
-        <% end %>
+      <div class="cg-panel">
+        <div class="cg-panel-header">
+          <div class="cg-panel-title">Audit Trail</div>
+        </div>
+        <div class="p-2 space-y-2">
+          <% @recent_audit_logs.to_a.first(3).each do |audit| %>
+            <div class="cg-evidence" style="padding: 0.5rem 0.6rem;">
+              <div class="text-sm font-medium"><%= audit.action %></div>
+              <div class="text-xs mt-0.5" style="color: var(--cg-muted);"><%= audit.actor %> · <%= time_ago_in_words(audit.created_at) %> ago</div>
+              <div class="mt-1 text-xs" style="color: var(--cg-text);"><%= audit.justification %></div>
+            </div>
+          <% end %>
+          <% if @recent_audit_logs.to_a.empty? %>
+            <div class="text-xs" style="color: var(--cg-muted); padding: 0.5rem;">No audit events.</div>
+          <% end %>
+        </div>
       </div>
     </div>
   </div>
+
 <% end %>

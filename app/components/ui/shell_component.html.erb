@@ -1,21 +1,17 @@
-<div class="min-h-screen cg-shell text-neutral-100">
-  <div class="mx-auto max-w-6xl px-6 py-10">
-    <header class="cg-shell-header mb-8">
+<div class="min-h-screen cg-shell" data-controller="shell">
+  <div class="mx-auto max-w-6xl px-6 py-4">
+    <header class="cg-shell-header">
       <div>
-        <div class="cg-shell-eyebrow text-xs tracking-widest text-neutral-500">CELLGUARD CONTROL PLANE</div>
-        <h1 class="mt-2 text-3xl font-semibold"><%= @title %></h1>
+        <div class="cg-shell-eyebrow"><%= @eyebrow %></div>
+        <h1 class="mt-1 text-2xl font-bold tracking-tight" style="color: #f8fafc;"><%= @title %></h1>
         <% if @subtitle.present? %>
-          <div class="mt-2 text-sm text-neutral-400"><%= @subtitle %></div>
+          <div class="mt-0.5 text-xs text-neutral-500"><%= @subtitle %></div>
         <% end %>
       </div>
 
       <nav class="cg-top-nav" aria-label="Primary">
         <% nav_items.each do |item| %>
-          <a
-            href="<%= item[:href] %>"
-            class="<%= nav_link_classes(item[:active]) %>"
-            <% if item[:active] %>aria-current="page"<% end %>
-          >
+          <a href="<%= item[:href] %>" class="<%= nav_link_classes(item[:active]) %>" <% if item[:active] %>aria-current="page"<% end %>>
             <%= heroicon(item[:icon], classes: "cg-top-nav__icon") %>
             <span><%= item[:label] %></span>
           </a>
@@ -25,8 +21,9 @@
 
     <%= content %>
 
-    <div class="mt-10 border-t border-neutral-900 pt-6 text-xs text-neutral-600">
-      Policy-as-code • Auditability • Closed-loop reliability
+    <div class="cg-shell-footer">
+      <span>CellGuard Mission Control — Policy-as-code • Auditability • Closed-loop reliability</span>
+      <span class="font-mono" style="color: var(--cg-muted-dim);">v1.0.0</span>
     </div>
   </div>
 </div>

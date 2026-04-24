@@ -24,11 +24,11 @@ export default class extends Controller {
       },
 
       connected: () => {
-        console.log("[AgentActivity] Connected to WebSocket")
+        this.showNotification("Agent activity channel connected", "info")
       },
 
       disconnected: () => {
-        console.log("[AgentActivity] Disconnected from WebSocket")
+        this.showNotification("Agent activity channel disconnected", "warning")
       }
     })
   }
@@ -40,11 +40,11 @@ export default class extends Controller {
         this.updateActivity(data.recent_activity)
         break
       case "agent_toggled":
-        this.showNotification(`${data.agent} ${data.enabled ? "enabled" : "disabled"}`)
+        this.showNotification(`${data.agent} ${data.enabled ? "enabled" : "disabled"}`, "success")
         this.refresh()
         break
       case "agent_triggered":
-        this.showNotification(`${data.agent} triggered on ${data.shard}`)
+        this.showNotification(`${data.agent} triggered on ${data.shard}`, "success")
         break
       case "agent_error":
         this.showNotification(`Error: ${data.error}`, "error")
@@ -75,7 +75,7 @@ export default class extends Controller {
       this.showNotification(`${agentName} is disabled`, "error")
       return
     }
-    
+
     try {
       await this.runViaHttp(agentName)
     } catch (error) {
@@ -90,7 +90,7 @@ export default class extends Controller {
     const previousLabel = button.textContent || "Run"
     this.setButtonBusy(button, true, "Running...")
     this.refresh()
-    
+
     setTimeout(() => {
       if (!button.isConnected) {
         return
@@ -120,7 +120,7 @@ export default class extends Controller {
       const payload = await this.toggleViaHttp(agentName, nextEnabled)
       const effectiveEnabled = payload && payload.enabled === true
       this.applyAgentEnabledState(agentName, effectiveEnabled)
-      this.showNotification(`${agentName} ${effectiveEnabled ? "enabled" : "disabled"}`)
+      this.showNotification(`${agentName} ${effectiveEnabled ? "enabled" : "disabled"}`, "success")
     } catch (error) {
       this.showNotification(`Toggle failed: ${error.message}`, "error")
       this.applyAgentEnabledState(agentName, currentlyEnabled)
@@ -144,7 +144,7 @@ export default class extends Controller {
     }
 
     agents.forEach((agent) => {
-      const card = this.element.querySelector(`[data-agent-key=\"${agent.name}\"]`)
+      const card = this.element.querySelector(`[data-agent-key="${agent.name}"]`)
       if (!card) {
         return
       }
@@ -193,7 +193,7 @@ export default class extends Controller {
   }
 
   applyAgentEnabledState(agentName, enabled) {
-    const card = this.element.querySelector(`[data-agent-key=\"${agentName}\"]`)
+    const card = this.element.querySelector(`[data-agent-key="${agentName}"]`)
     if (!card) {
       return
     }
@@ -239,9 +239,9 @@ export default class extends Controller {
 
     if (activity.length === 0) {
       this.feedTarget.innerHTML = `
-        <div class=\"px-4 py-8 text-center\">
-          <div class=\"text-sm text-neutral-500\">No agent activity yet</div>
-          <div class=\"text-xs text-neutral-600 mt-1\">Agents will appear here when they run</div>
+        <div class="px-4 py-8 text-center">
+          <div class="text-sm text-neutral-500">No agent activity yet</div>
+          <div class="text-xs text-neutral-600 mt-1">Agents will appear here when they run</div>
         </div>
       `
       return
@@ -253,25 +253,25 @@ export default class extends Controller {
         const color = this.statusColor(entry.status)
         const time = this.formatTime(entry.created_at)
         const action = entry.action ? this.humanize(entry.action) : ""
-        const shard = entry.shard ? `<span class=\"text-xs text-neutral-500\">${entry.shard}</span>` : ""
+        const shard = entry.shard ? `<span class="text-xs text-neutral-500">${entry.shard}</span>` : ""
 
         return `
-          <div class=\"px-4 py-3 flex items-start gap-3 hover:bg-neutral-900/50 transition-colors\">
-            <span class=\"text-lg ${color}\">${icon}</span>
-            <div class=\"flex-1 min-w-0\">
-              <div class=\"flex items-center gap-2\">
-                <span class=\"text-sm font-medium text-neutral-200\">${this.titleize(entry.agent)}</span>
+          <div class="px-4 py-3 flex items-start gap-3 hover:bg-neutral-900/50 transition-colors">
+            <span class="text-lg ${color}">${icon}</span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-medium text-neutral-200">${this.titleize(entry.agent)}</span>
                 ${shard}
               </div>
-              ${action ? `<div class=\"text-xs text-neutral-400 mt-0.5\">${action}</div>` : ""}
+              ${action ? `<div class="text-xs text-neutral-400 mt-0.5">${action}</div>` : ""}
             </div>
-            <div class=\"text-xs text-neutral-600 whitespace-nowrap\">${time}</div>
+            <div class="text-xs text-neutral-600 whitespace-nowrap">${time}</div>
           </div>
         `
       })
       .join("")
 
-    this.feedTarget.innerHTML = `<div class=\"divide-y divide-neutral-800\" data-agent-activity-list=\"true\">${html}</div>`
+    this.feedTarget.innerHTML = `<div class="divide-y divide-neutral-800" data-agent-activity-list="true">${html}</div>`
   }
 
   prependActivity(data) {
@@ -283,7 +283,7 @@ export default class extends Controller {
     } else {
       this.feedTarget.insertBefore(item, this.feedTarget.firstChild)
     }
-    
+
     // Keep only last 50 items
     const container = list || this.feedTarget
     while (container.children.length > 50) {
@@ -294,11 +294,11 @@ export default class extends Controller {
   createActivityElement(data) {
     const div = document.createElement("div")
     div.className = "px-4 py-3 flex items-start gap-3 hover:bg-neutral-900/50 transition-colors"
-    
+
     const icon = this.statusIcon(data.status)
     const color = this.statusColor(data.status)
     const time = this.formatTime(data.created_at)
-    
+
     div.innerHTML = `
       <span class="text-lg ${color}">${icon}</span>
       <div class="flex-1 min-w-0">
@@ -310,7 +310,7 @@ export default class extends Controller {
       </div>
       <div class="text-xs text-neutral-600 whitespace-nowrap">${time}</div>
     `
-    
+
     return div
   }
 
@@ -336,7 +336,7 @@ export default class extends Controller {
     const date = new Date(isoString)
     const now = new Date()
     const diff = (now - date) / 1000
-    
+
     if (diff < 60) return `${Math.round(diff)}s ago`
     if (diff < 3600) return `${Math.round(diff / 60)}m ago`
     if (diff < 86400) return `${Math.round(diff / 3600)}h ago`
@@ -352,8 +352,9 @@ export default class extends Controller {
   }
 
   showNotification(message, type = "info") {
-    // Simple notification - could be enhanced with a toast system
-    console.log(`[AgentActivity] ${type}: ${message}`)
+    window.dispatchEvent(new CustomEvent("cellguard:toast", {
+      detail: { message, type }
+    }))
   }
 
   async runViaHttp(agentName) {

@@ -1,24 +1,148 @@
 <%= render Ui::ShellComponent.new(
   title: "CellGuard",
-  subtitle: "A reliability control plane: policy-as-code (423) + Game Day chaos + audited governance."
+  subtitle: "Deploy decisions backed by live reliability evidence",
+  eyebrow: "CELLGUARD MISSION CONTROL"
 ) do %>
 
-  <div class="rounded-2xl border border-neutral-900 bg-neutral-950/60 px-8 py-10">
-    <div class="text-sm text-neutral-300 max-w-3xl">
-      CellGuard is intentionally not a dashboard clone. It enforces release policy using SLO error budgets,
-      records override governance, and proves reliability via controlled failure injection (Game Day).
+  <div class="space-y-4" data-gsap="landing-page">
+    <%# Hero — stretch to fill height, no floating empty space %>
+    <div class="grid gap-4 md:grid-cols-2 items-stretch">
+      <div class="flex flex-col justify-center" data-gsap="hero">
+        <div class="text-3xl font-bold tracking-tight" style="color: #f8fafc;">CellGuard</div>
+        <div class="mt-1 text-lg font-medium" style="color: var(--cg-text);">Deploy decisions backed by live reliability evidence.</div>
+        <div class="mt-2 text-sm" style="color: var(--cg-muted);">Reliability control plane for release safety.</div>
+        <div class="mt-3 text-sm leading-relaxed" style="color: var(--cg-muted); max-width: 28rem;">
+          Prevent bad deploys with policy-as-code, error budgets, chaos drills, and audited overrides. CellGuard evaluates every release against live SLO data and blocks deploys when reliability evidence says no.
+        </div>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <a href="/dashboard#game-day" class="cg-btn cg-btn--primary">Run Game Day</a>
+          <a href="/dashboard" class="cg-btn cg-btn--secondary">Open Dashboard</a>
+        </div>
+      </div>
+
+      <%# Product Preview Card — taller, more evidence %>
+      <div class="cg-panel flex flex-col" data-gsap="preview-card">
+        <div class="cg-panel-header">
+          <div class="cg-panel-title">Live Gate Snapshot</div>
+          <span class="cg-state-badge cg-state-badge--locked">Locked</span>
+        </div>
+        <div class="p-3 flex-1 flex flex-col justify-center">
+          <div class="grid grid-cols-2 gap-2">
+            <div class="cg-evidence">
+              <div class="cg-evidence__label">Gate Result</div>
+              <div class="cg-evidence__value is-danger">423</div>
+            </div>
+            <div class="cg-evidence">
+              <div class="cg-evidence__label">Burn Rate</div>
+              <div class="cg-evidence__value is-warn">4.2x</div>
+            </div>
+            <div class="cg-evidence">
+              <div class="cg-evidence__label">Budget Remaining</div>
+              <div class="cg-evidence__value is-danger">0.00%</div>
+            </div>
+            <div class="cg-evidence">
+              <div class="cg-evidence__label">SLO Target</div>
+              <div class="cg-evidence__value is-ok">99.9%</div>
+            </div>
+            <div class="cg-evidence">
+              <div class="cg-evidence__label">Window</div>
+              <div class="cg-evidence__value is-muted">30d</div>
+            </div>
+            <div class="cg-evidence">
+              <div class="cg-evidence__label">Action Required</div>
+              <div class="cg-evidence__value is-muted" style="font-size: 0.72rem;">Review runbook before override</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="mt-8 flex flex-wrap gap-3">
-      <a href="/dashboard#game-day" class="cg-btn cg-btn--primary">
-        Run Game Day
-      </a>
-      <a href="/dashboard" class="cg-btn cg-btn--secondary">
-        Open Dashboard
-      </a>
-      <a href="/runbooks/gameday" class="cg-btn cg-btn--secondary">
-        View Runbook
-      </a>
+    <%# Proof Strip %>
+    <div class="flex flex-wrap gap-2" data-gsap="proof-strip">
+      <span class="cg-decision-badge is-success">423 Locked release gate</span>
+      <span class="cg-decision-badge is-success">SLO error budget enforcement</span>
+      <span class="cg-decision-badge is-success">Chaos drill validation</span>
+      <span class="cg-decision-badge is-success">Audited manual override</span>
+    </div>
+
+    <%# Workflow + Demo + Stack in a dense row %>
+    <div class="grid gap-3 md:grid-cols-3">
+      <%# Workflow %>
+      <div class="cg-panel p-3" data-gsap="workflow">
+        <div class="cg-panel-title mb-2">Closed-Loop Workflow</div>
+        <div class="flex flex-wrap items-center gap-1 text-xs">
+          <% ["Signal", "Evaluation", "Gate", "Incident", "Runbook", "Audit"].each_with_index do |step, i| %>
+            <span class="px-2 py-1 rounded border font-semibold" style="border-color: var(--cg-border); background: rgba(0,0,0,0.2); color: var(--cg-text);"><%= step %></span>
+            <% if i < 5 %>
+              <span style="color: var(--cg-muted-dim);">→</span>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+
+      <%# Demo Preview %>
+      <div class="cg-panel p-3" data-gsap="demo-preview">
+        <div class="cg-panel-title mb-2">30s Demo</div>
+        <div class="flex flex-wrap items-center gap-1 text-xs">
+          <span class="px-1.5 py-0.5 rounded font-mono" style="background: rgba(22,163,74,0.1); color: var(--cg-ok);">200</span>
+          <span style="color: var(--cg-muted-dim);">→</span>
+          <span style="color: var(--cg-muted);">Inject</span>
+          <span style="color: var(--cg-muted-dim);">→</span>
+          <span style="color: var(--cg-muted);">Evaluate</span>
+          <span style="color: var(--cg-muted-dim);">→</span>
+          <span class="px-1.5 py-0.5 rounded font-mono" style="background: rgba(185,28,28,0.1); color: var(--cg-danger);">423</span>
+          <span style="color: var(--cg-muted-dim);">→</span>
+          <span style="color: var(--cg-muted);">Incident</span>
+          <span style="color: var(--cg-muted-dim);">→</span>
+          <span style="color: var(--cg-muted);">Runbook</span>
+        </div>
+      </div>
+
+      <%# Stack Badges %>
+      <div class="cg-panel p-3" data-gsap="stack">
+        <div class="cg-panel-title mb-2">Built On</div>
+        <div class="flex flex-wrap gap-1">
+          <% ["Rails 7.1", "Hotwire", "Sidekiq", "Redis", "PostgreSQL", "Go", "ActionCable"].each do |badge| %>
+            <span class="font-mono text-xs px-1.5 py-0.5 rounded border" style="border-color: var(--cg-border); background: rgba(0,0,0,0.2); color: var(--cg-muted);"><%= badge %></span>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <%# Bottom Evidence Section — fills empty vertical space %>
+    <div class="grid gap-3 md:grid-cols-3">
+      <div class="cg-panel p-3" data-gsap="evidence-1">
+        <div class="cg-panel-title mb-2">Policy-as-Code Gates</div>
+        <div class="text-xs leading-relaxed" style="color: var(--cg-muted);">
+          Release gates are evaluated against live SLO error budgets. When burn rate exceeds threshold, the gate locks with HTTP 423. No human judgment required — the policy decides.
+        </div>
+        <div class="mt-2 flex items-center gap-2">
+          <span class="cg-decision-badge is-success">Automatic</span>
+          <span class="font-mono text-xs" style="color: var(--cg-muted-dim);">HTTP 423</span>
+        </div>
+      </div>
+
+      <div class="cg-panel p-3" data-gsap="evidence-2">
+        <div class="cg-panel-title mb-2">Chaos Engineering</div>
+        <div class="text-xs leading-relaxed" style="color: var(--cg-muted);">
+          Controlled fault injection validates closed-loop reliability. Partition Redis, degrade network, then watch the gate lock and the runbook trigger. Proof that the system works under failure.
+        </div>
+        <div class="mt-2 flex items-center gap-2">
+          <span class="cg-decision-badge is-recommended">Game Day</span>
+          <span class="font-mono text-xs" style="color: var(--cg-muted-dim);">Docker / tc</span>
+        </div>
+      </div>
+
+      <div class="cg-panel p-3" data-gsap="evidence-3">
+        <div class="cg-panel-title mb-2">Audited Overrides</div>
+        <div class="text-xs leading-relaxed" style="color: var(--cg-muted);">
+          Every manual override requires justification and is written to the audit trail. CellGuard records who, when, why, and what the evidence was at the time of override. No shadow ops.
+        </div>
+        <div class="mt-2 flex items-center gap-2">
+          <span class="cg-decision-badge is-success">Immutable</span>
+          <span class="font-mono text-xs" style="color: var(--cg-muted-dim);">Audit Log</span>
+        </div>
+      </div>
     </div>
   </div>
 

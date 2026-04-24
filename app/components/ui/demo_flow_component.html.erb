@@ -1,0 +1,27 @@
+<div class="cg-panel" data-gsap="demo-flow">
+  <div class="cg-panel-header">
+    <div class="flex items-center gap-2">
+      <div class="cg-panel-title">30-Second Demo Flow</div>
+      <span class="cg-decision-badge is-recommended">Live</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <button type="button" class="cg-btn cg-btn--sm cg-btn--primary" data-action="click->shell#runDemo">Run Full Demo</button>
+      <button type="button" class="cg-btn cg-btn--sm">Reset</button>
+      <button type="button" class="cg-btn cg-btn--sm">Step</button>
+    </div>
+  </div>
+  <div class="cg-demo">
+    <% Ui::DemoFlowComponent::STEPS.each do |step| %>
+      <div class="cg-demo__step <%= 'is-complete' if step[:status] == :complete %> <%= 'is-active' if step[:status] == :active %> <%= 'is-failed' if step[:status] == :failed %>">
+        <div class="cg-demo__num">Step <%= step[:num] %></div>
+        <div class="cg-demo__label"><%= step[:label] %></div>
+        <div class="cg-demo__meta"><%= step[:endpoint] %></div>
+        <% if step[:code].present? %>
+          <span class="cg-demo__code <%= 'is-danger' if step[:code].include?('423') || step[:code].include?('Locked') %> <%= 'is-ok' if step[:code].include?('200') %>"><%= step[:code] %></span>
+        <% end %>
+        <div class="cg-demo__status <%= 'is-complete' if step[:status] == :complete %> <%= 'is-active' if step[:status] == :active %> <%= 'is-failed' if step[:status] == :failed %> <%= 'is-pending' if step[:status] == :pending %>"><%= step[:status] %></div>
+        <div class="cg-demo__meta" style="margin-top: 0.2rem;"><%= step[:time] %></div>
+      </div>
+    <% end %>
+  </div>
+</div>

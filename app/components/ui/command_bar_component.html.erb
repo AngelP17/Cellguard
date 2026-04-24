@@ -1,0 +1,34 @@
+<div class="cg-command-bar" data-controller="command-bar">
+  <div class="cg-command-bar__group">
+    <div class="cg-command-bar__metric">
+      <div class="cg-command-bar__label">Shard</div>
+      <div class="cg-command-bar__value" style="font-size: 0.75rem; color: var(--cg-muted);"><%= @shard %></div>
+    </div>
+  </div>
+
+  <div class="cg-command-bar__group">
+    <div class="cg-command-bar__metric">
+      <div class="cg-command-bar__label">Gate</div>
+      <div class="cg-command-bar__value <%= @gate_open ? 'is-ok' : 'is-danger' %>"><%= gate_text %></div>
+    </div>
+    <div class="cg-command-bar__metric">
+      <div class="cg-command-bar__label">Burn Rate</div>
+      <div class="cg-command-bar__value <%= burn_color %>"><%= @burn_rate %>x</div>
+    </div>
+    <div class="cg-command-bar__metric">
+      <div class="cg-command-bar__label">Budget</div>
+      <div class="cg-command-bar__value <%= budget_color %>"><%= (@budget_remaining.to_f * 100).round(2) %>%</div>
+    </div>
+    <div class="cg-command-bar__metric">
+      <div class="cg-command-bar__label">Last Eval</div>
+      <div class="cg-command-bar__value" style="font-size: 0.7rem; color: var(--cg-muted);"><%= eval_text %></div>
+    </div>
+  </div>
+
+  <div class="cg-command-bar__actions">
+    <a href="/dashboard" class="cg-btn cg-btn--primary" data-turbo="false">Run Evaluation</a>
+    <a href="/dashboard#game-day" class="cg-btn cg-btn--secondary">Run Game Day</a>
+    <button type="button" class="cg-btn cg-btn--secondary" data-controller="gameday" data-action="click->gameday#heal">Heal</button>
+    <a href="/api/release_gates/override" class="cg-btn cg-btn--danger" data-turbo="false">Override</a>
+  </div>
+</div>

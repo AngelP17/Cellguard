@@ -1,0 +1,8 @@
+<div class="cg-workflow" data-gsap="workflow">
+  <% Ui::WorkflowComponent::STEPS.each_with_index do |step, index| %>
+    <span class="cg-workflow__step"><%= step %></span>
+    <% if index < Ui::WorkflowComponent::STEPS.size - 1 %>
+      <span class="cg-workflow__arrow">→</span>
+    <% end %>
+  <% end %>
+</div>

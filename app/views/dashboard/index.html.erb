@@ -1,97 +1,119 @@
 <%= render Ui::ShellComponent.new(
   title: "Dashboard",
-  subtitle: "Autonomous Control Plane • Policy Enforcement • Chaos Engineering"
+  subtitle: "Release Safety Decision Cockpit",
+  eyebrow: "CELLGUARD MISSION CONTROL"
 ) do %>
 
-  <div class="space-y-6">
-    <%# Hero Gate Panel %>
+  <div class="space-y-4" data-gsap="dashboard">
+    <%# A. Sticky Command Bar %>
+    <%= render Ui::CommandBarComponent.new(
+      shard: @shard.name,
+      gate_open: @budget.release_gate_open,
+      burn_rate: @budget.current_burn_rate.to_f,
+      budget_remaining: @budget.budget_remaining.to_f,
+      last_eval_at: @budget.evaluated_at
+    ) %>
+
+    <%# B. 30-Second Demo Flow %>
+    <%= render Ui::DemoFlowComponent.new %>
+
+    <%# C. Release Gate Hero Panel %>
     <%= render Ui::GatePanelComponent.new(
       gate_open: @budget.release_gate_open,
       reason: (@budget.release_gate_open ? nil : "Error budget exhausted. Override requires justification + audit log."),
       violation_started_at: @budget.violation_started_at,
       burn_rate: @budget.current_burn_rate.to_f,
-      budget_remaining: @budget.budget_remaining.to_f
+      budget_remaining: @budget.budget_remaining.to_f,
+      active_incident: @incidents.any? { |i| i.status.to_s.downcase != "resolved" },
+      last_eval_at: @budget.evaluated_at,
+      recommended_action: (@budget.release_gate_open ? nil : "Review runbook before override")
     ) %>
 
-    <%# SRE Scorecards %>
-    <div class="grid gap-4 md:grid-cols-3">
+    <%# D. Decision Timeline — full-width horizontal %>
+    <%= render Ui::DecisionTimelineComponent.new %>
+
+    <%# E. Lower Dashboard — Dense Grid %>
+
+    <%# Row 1: SRE Scorecards %>
+    <div class="grid gap-3 md:grid-cols-3" data-gsap="scorecards">
       <article class="cg-scorecard">
         <div class="cg-scorecard__label">Chaos Drill Success (30d)</div>
         <div class="cg-scorecard__value"><%= @sre_scorecards.dig(:chaos, :success_rate_label) %></div>
         <div class="cg-scorecard__meta">
-          <%= @sre_scorecards.dig(:chaos, :successful) %> successful /
+          <%= @sre_scorecards.dig(:chaos, :successful) %> /
           <%= @sre_scorecards.dig(:chaos, :executed) %> executed
-        </div>
-        <div class="cg-scorecard__meta">
-          <%= @sre_scorecards.dig(:chaos, :skipped) %> skipped •
-          <%= @sre_scorecards.dig(:chaos, :recommended) %> recommended
+          • <%= @sre_scorecards.dig(:chaos, :skipped) %> skipped
         </div>
       </article>
 
       <article class="cg-scorecard">
-        <div class="cg-scorecard__label">MTTR (Resolved Incidents, 30d)</div>
+        <div class="cg-scorecard__label">MTTR (30d)</div>
         <div class="cg-scorecard__value"><%= @sre_scorecards.dig(:mttr, :label) %></div>
         <div class="cg-scorecard__meta">
-          <%= @sre_scorecards.dig(:mttr, :resolved_count) %> incidents resolved in lookback window
+          <%= @sre_scorecards.dig(:mttr, :resolved_count) %> resolved
         </div>
       </article>
 
       <article class="cg-scorecard">
-        <div class="cg-scorecard__label">Gate-Lock Frequency Trend (7d)</div>
+        <div class="cg-scorecard__label">Gate Locks (7d)</div>
         <div class="cg-scorecard__value"><%= @sre_scorecards.dig(:gate_locks, :recent_total) %></div>
         <div class="cg-scorecard__meta"><%= @sre_scorecards.dig(:gate_locks, :trend_label) %></div>
         <div class="cg-scorecard__sparkline"><%= @sre_scorecards.dig(:gate_locks, :sparkline) %></div>
       </article>
     </div>
 
-    <%# Agent Activity - The WOW Factor %>
-    <div class="rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-950/20 to-neutral-950/60 px-6 py-6">
-      <div class="flex items-center gap-3 mb-4">
-        <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
-        <div>
-          <div class="text-sm font-semibold text-emerald-400">Autonomous Agents</div>
-          <div class="text-xs text-neutral-500">Self-managing reliability operations</div>
+    <%# Row 2: Agents wide + Error Budget + Chaos — stretch to equal height %>
+    <div class="grid gap-3 md:grid-cols-3 items-stretch">
+      <%# Autonomous Agents — Wide card %>
+      <div class="md:col-span-1 cg-panel flex flex-col" data-gsap="agent-activity">
+        <div class="cg-panel-header">
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+            <div class="cg-panel-title" style="margin:0;">Autonomous Agents</div>
+          </div>
+        </div>
+        <div class="p-2 flex-1">
+          <%= render Ui::AgentActivityComponent.new(
+            agents: @agent_status,
+            recent_activity: @agent_activity
+          ) %>
         </div>
       </div>
-      <%= render Ui::AgentActivityComponent.new(
-        agents: @agent_status,
-        recent_activity: @agent_activity
-      ) %>
-    </div>
 
-    <div class="grid gap-6 md:grid-cols-2">
-      <%# Error Budget Panel %>
-      <div class="rounded-2xl border border-neutral-900 bg-neutral-950/60 px-6 py-6">
-        <div class="text-sm font-semibold">Error Budget</div>
-        <div class="mt-1 text-xs text-neutral-400">SLO-driven policy primitive</div>
-        <div class="mt-4">
+      <%# Error Budget %>
+      <div class="cg-panel flex flex-col" data-gsap="budget-panel">
+        <div class="cg-panel-header">
+          <div class="cg-panel-title">Error Budget</div>
+        </div>
+        <div class="p-3 flex-1 flex flex-col justify-center">
           <%= render Ui::BudgetMeterComponent.new(remaining: @budget.budget_remaining.to_f) %>
-        </div>
-        <div class="mt-4 grid grid-cols-2 gap-4 text-xs">
-          <div>
-            <div class="text-neutral-500">SLO Target</div>
-            <div class="text-neutral-200 font-mono"><%= (@budget.slo_target.to_f * 100).round(1) %>%</div>
-          </div>
-          <div>
-            <div class="text-neutral-500">Window</div>
-            <div class="text-neutral-200 font-mono"><%= @budget.window_days %> days</div>
-          </div>
-          <div>
-            <div class="text-neutral-500">Consumed</div>
-            <div class="text-neutral-200 font-mono"><%= (@budget.budget_consumed.to_f * 100).round(2) %>%</div>
-          </div>
-          <div>
-            <div class="text-neutral-500">Burn Rate</div>
-            <div class="text-neutral-200 font-mono"><%= @budget.current_burn_rate.to_f %>x</div>
+          <div class="mt-3 grid grid-cols-2 gap-3 text-xs">
+            <div>
+              <div style="color: var(--cg-muted-dim); font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">SLO Target</div>
+              <div class="font-mono mt-0.5" style="color: var(--cg-text);"><%= (@budget.slo_target.to_f * 100).round(1) %>%</div>
+            </div>
+            <div>
+              <div style="color: var(--cg-muted-dim); font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Window</div>
+              <div class="font-mono mt-0.5" style="color: var(--cg-text);"><%= @budget.window_days %>d</div>
+            </div>
+            <div>
+              <div style="color: var(--cg-muted-dim); font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Consumed</div>
+              <div class="font-mono mt-0.5" style="color: var(--cg-text);"><%= (@budget.budget_consumed.to_f * 100).round(2) %>%</div>
+            </div>
+            <div>
+              <div style="color: var(--cg-muted-dim); font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Burn Rate</div>
+              <div class="font-mono mt-0.5" style="color: var(--cg-text);"><%= @budget.current_burn_rate.to_f %>x</div>
+            </div>
           </div>
         </div>
       </div>
 
-      <%# Chaos Engineering Panel %>
-      <div id="game-day" class="rounded-2xl border border-neutral-900 bg-neutral-950/60 px-6 py-6">
-        <div class="text-sm font-semibold">Chaos Engineering</div>
-        <div class="mt-1 text-xs text-neutral-400">Game Day fault injection (SRE-grade proof)</div>
-        <div class="mt-4">
+      <%# Chaos Engineering — Preserved existing chaos buttons %>
+      <div class="cg-panel flex flex-col" id="game-day" data-gsap="chaos-panel">
+        <div class="cg-panel-header">
+          <div class="cg-panel-title">Chaos Engineering</div>
+        </div>
+        <div class="p-2 flex-1">
           <%= render Ui::ChaosGamedayComponent.new(
             shard: @shard.name,
             default_duration: 20,
@@ -101,33 +123,35 @@
       </div>
     </div>
 
-    <div class="grid gap-6 md:grid-cols-2">
-      <%# Recent Incidents %>
-      <div class="rounded-2xl border border-neutral-900 bg-neutral-950/60 px-6 py-6">
-        <div class="text-sm font-semibold">Recent Incidents</div>
-        <div class="mt-1 text-xs text-neutral-400">
-          Classifier-driven with auto-analysis
-          <% if @incident_scope == :global %>
-            • showing global feed (current shard has no incidents)
-          <% end %>
+    <%# Row 3: Recent Incidents + Audit Trail %>
+    <div class="grid gap-3 md:grid-cols-2">
+      <div class="cg-panel" data-gsap="incidents-panel">
+        <div class="cg-panel-header">
+          <div>
+            <div class="cg-panel-title">Recent Incidents</div>
+            <div class="cg-panel-subtitle">
+              <% if @incident_scope == :global %>Global feed<% else %>Shard scope<% end %>
+            </div>
+          </div>
+          <a href="/incidents" class="cg-btn cg-btn--sm cg-btn--secondary">View All</a>
         </div>
-        <div class="mt-3 space-y-2">
-          <% @incidents.each do |i| %>
-            <div class="rounded-xl border border-neutral-900 px-4 py-3">
-              <div class="text-sm font-medium"><%= i.title %></div>
-              <div class="mt-1 text-xs text-neutral-400">
-                <%= i.severity_label %> • <%= i.status %> • <%= time_ago_in_words(i.created_at) %> ago
+        <div class="p-2 space-y-2">
+          <% @incidents.first(5).each do |i| %>
+            <div class="cg-evidence" style="padding: 0.5rem 0.65rem;">
+              <div class="flex items-center justify-between gap-2">
+                <div class="text-sm font-medium truncate"><%= i.title %></div>
+                <span class="cg-severity cg-severity--<%= i.severity_label.to_s.downcase %>"><%= i.severity_label %></span>
+              </div>
+              <div class="mt-1 text-xs" style="color: var(--cg-muted);">
+                <%= i.status %> • <%= time_ago_in_words(i.created_at) %> ago
                 <% if i.shard&.name.present? %>
-                  • <span class="text-neutral-300"><%= i.shard.name %></span>
+                  • <span class="font-mono"><%= i.shard.name %></span>
                 <% end %>
               </div>
               <% if i.context&.dig("suggested_runbooks").present? %>
-                <div class="mt-2 flex flex-wrap gap-1">
+                <div class="mt-1.5 flex flex-wrap gap-1">
                   <% i.context["suggested_runbooks"].first(2).each do |rb| %>
-                    <a
-                      href="/runbooks/<%= rb['slug'] %>?incident_id=<%= i.id %>"
-                      class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                    >
+                    <a href="/runbooks/<%= rb['slug'] %>?incident_id=<%= i.id %>" class="cg-chip--runbook" style="font-size: 0.62rem; padding: 0.1rem 0.35rem;">
                       <%= rb['title'] %>
                     </a>
                   <% end %>
@@ -136,37 +160,40 @@
             </div>
           <% end %>
           <% if @incidents.empty? %>
-            <div class="text-sm text-neutral-500">
-              No incidents yet. Trigger `make gameday` or use Chaos + Evaluate to generate incident records.
+            <div class="text-sm" style="color: var(--cg-muted); padding: 0.5rem;">
+              No incidents. Run <code class="font-mono">make gameday</code> to generate.
             </div>
           <% end %>
         </div>
       </div>
 
-      <%# Audit Trail %>
-      <div class="rounded-2xl border border-neutral-900 bg-neutral-950/60 px-6 py-6">
-        <div class="text-sm font-semibold">Audit Trail</div>
-        <div class="mt-1 text-xs text-neutral-400">
-          Overrides require justification
-          <% if @audit_scope == :global %>
-            • showing global feed (current shard has no audit entries)
-          <% end %>
+      <div class="cg-panel" data-gsap="audit-panel">
+        <div class="cg-panel-header">
+          <div>
+            <div class="cg-panel-title">Audit Trail</div>
+            <div class="cg-panel-subtitle">
+              <% if @audit_scope == :global %>Global feed<% else %>Shard scope<% end %>
+            </div>
+          </div>
         </div>
-        <div class="mt-3 space-y-2">
-          <% @audit_logs.each do |a| %>
-            <div class="rounded-xl border border-neutral-900 px-4 py-3">
-              <div class="text-sm font-medium"><%= a.action %></div>
-              <div class="mt-1 text-xs text-neutral-400">
-                <%= a.actor %> • <%= time_ago_in_words(a.created_at) %> ago
+        <div class="p-2 space-y-2">
+          <% @audit_logs.first(5).each do |a| %>
+            <div class="cg-evidence" style="padding: 0.5rem 0.65rem;">
+              <div class="flex items-center justify-between gap-2">
+                <div class="text-sm font-medium"><%= a.action %></div>
+                <div class="text-xs font-mono" style="color: var(--cg-muted-dim);"><%= time_ago_in_words(a.created_at) %></div>
+              </div>
+              <div class="mt-0.5 text-xs" style="color: var(--cg-muted);">
+                <%= a.actor %>
                 <% if a.shard&.name.present? %>
-                  • <span class="text-neutral-300"><%= a.shard.name %></span>
+                  • <span class="font-mono"><%= a.shard.name %></span>
                 <% end %>
               </div>
-              <div class="mt-2 text-xs text-neutral-300"><%= a.justification %></div>
+              <div class="mt-1 text-xs" style="color: var(--cg-text);"><%= a.justification %></div>
             </div>
           <% end %>
           <% if @audit_logs.empty? %>
-            <div class="text-sm text-neutral-500">No audit events yet.</div>
+            <div class="text-sm" style="color: var(--cg-muted); padding: 0.5rem;">No audit events.</div>
           <% end %>
         </div>
       </div>

@@ -5,3 +5,4 @@ pin "@hotwired/stimulus-loading", to: "stimulus-loading.js", preload: true
 pin_all_from "app/javascript/controllers", under: "controllers"
 pin "@rails/actioncable", to: "actioncable.esm.js"
 pin_all_from "app/javascript/channels", under: "channels"
+pin "gsap", to: "https://cdn.jsdelivr.net/npm/gsap@3.12.5/index.min.js"

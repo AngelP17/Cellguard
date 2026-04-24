@@ -1,0 +1,18 @@
+<div class="cg-panel" data-gsap="decision-timeline">
+  <div class="cg-panel-header">
+    <div class="cg-panel-title">Decision Timeline</div>
+    <span class="cg-decision-badge is-recommended">7 steps</span>
+  </div>
+  <div class="p-3">
+    <div class="cg-timeline-h">
+      <% Ui::DecisionTimelineComponent::STEPS.each do |step| %>
+        <div class="cg-timeline-h__node <%= 'is-complete' if step[:status] == :complete %> <%= 'is-danger' if step[:status] == :danger %> <%= 'is-active' if step[:status] == :active %>">
+          <div class="cg-timeline-h__dot"></div>
+          <div class="cg-timeline-h__label"><%= step[:label] %></div>
+          <div class="cg-timeline-h__code <%= 'is-danger' if step[:code] == '423' || step[:code] == 'ALERT' %> <%= 'is-ok' if step[:code] == '200' || step[:code] == '201' %>"><%= step[:code] %></div>
+          <div class="cg-timeline-h__meta"><%= step[:time] %></div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
