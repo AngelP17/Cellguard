@@ -2,10 +2,15 @@ module Ui
   class ShellComponent < ViewComponent::Base
     include HeroiconsHelper
 
-    def initialize(title:, subtitle: nil, eyebrow: "CELLGUARD MISSION CONTROL")
+    def initialize(title:, subtitle: nil, eyebrow: "CELLGUARD MISSION CONTROL", variant: :default)
       @title = title
       @subtitle = subtitle
       @eyebrow = eyebrow
+      @variant = variant.to_sym
+    end
+
+    def landing?
+      @variant == :landing
     end
 
     def nav_items
