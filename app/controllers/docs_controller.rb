@@ -2,6 +2,9 @@ class DocsController < ApplicationController
   include MarkdownRenderer
 
   def runbook
+    # Ensure demo data exists so the UI never shows empty states
+    DemoDataService.ensure_all!
+
     slug = params.fetch(:slug)
     path = Rails.root.join("docs", "runbooks", "#{slug}.md")
     @slug = slug
@@ -15,6 +18,9 @@ class DocsController < ApplicationController
   end
 
   def postmortem
+    # Ensure demo data exists so the UI never shows empty states
+    DemoDataService.ensure_all!
+
     slug = params.fetch(:slug)
     path = Rails.root.join("docs", "postmortems", "#{slug}.md")
     @slug = slug

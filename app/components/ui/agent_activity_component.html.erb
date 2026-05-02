@@ -73,39 +73,32 @@
     </div>
 
     <div data-agent-activity-target="feed" class="max-h-64 overflow-y-auto">
-      <% if @recent_activity.any? %>
-        <div class="divide-y divide-neutral-800">
-          <% @recent_activity.each do |activity| %>
-            <div class="px-4 py-3 flex items-start gap-3 hover:bg-neutral-900/50 transition-colors">
-              <span class="<%= execution_status_color(activity[:status]) %>">
-                <%= execution_status_icon(activity[:status]) %>
-              </span>
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2">
-                  <span class="text-sm font-medium text-neutral-200"><%= activity[:agent].titleize %></span>
-                  <% if activity[:shard] %>
-                    <span class="text-xs text-neutral-500"><%= activity[:shard] %></span>
-                  <% end %>
-                </div>
-                <% if activity[:action].present? %>
-                  <div class="text-xs text-neutral-400 mt-0.5"><%= activity[:action].to_s.humanize %></div>
-                <% end %>
-                <% if activity[:description].present? %>
-                  <div class="text-xs text-neutral-500 mt-1 line-clamp-1"><%= activity[:description] %></div>
+      <div class="divide-y divide-neutral-800">
+        <% @recent_activity.each do |activity| %>
+          <div class="px-4 py-3 flex items-start gap-3 hover:bg-neutral-900/50 transition-colors">
+            <span class="<%= execution_status_color(activity[:status]) %>">
+              <%= execution_status_icon(activity[:status]) %>
+            </span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-medium text-neutral-200"><%= activity[:agent].titleize %></span>
+                <% if activity[:shard] %>
+                  <span class="text-xs text-neutral-500"><%= activity[:shard] %></span>
                 <% end %>
               </div>
-              <div class="text-xs text-neutral-600 whitespace-nowrap">
-                <%= format_time_ago(activity[:created_at]) %>
-              </div>
+              <% if activity[:action].present? %>
+                <div class="text-xs text-neutral-400 mt-0.5"><%= activity[:action].to_s.humanize %></div>
+              <% end %>
+              <% if activity[:description].present? %>
+                <div class="text-xs text-neutral-500 mt-1 line-clamp-1"><%= activity[:description] %></div>
+              <% end %>
             </div>
-          <% end %>
-        </div>
-      <% else %>
-        <div class="px-4 py-8 text-center">
-          <div class="text-sm text-neutral-500">No agent activity yet</div>
-          <div class="text-xs text-neutral-600 mt-1">Agents will appear here when they run</div>
-        </div>
-      <% end %>
+            <div class="text-xs text-neutral-600 whitespace-nowrap">
+              <%= format_time_ago(activity[:created_at]) %>
+            </div>
+          </div>
+        <% end %>
+      </div>
     </div>
   </div>
 

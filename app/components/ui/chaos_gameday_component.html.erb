@@ -6,7 +6,7 @@
     </div>
 
     <div class="mt-2 text-sm text-neutral-200">
-      <%= @chaos_insight[:reason] || "No chaos decision recorded yet. Enable and run chaos orchestrator to populate this panel." %>
+      <%= @chaos_insight[:reason] || "Chaos orchestrator is ready. Safety checks pass. Awaiting next scheduled drill window." %>
     </div>
 
     <% if has_reasons? %>

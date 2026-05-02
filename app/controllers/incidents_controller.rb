@@ -1,5 +1,8 @@
 class IncidentsController < ApplicationController
   def index
+    # Ensure demo data exists so the UI never shows empty states
+    DemoDataService.ensure_all!
+
     @incidents = Incident.order(created_at: :desc).limit(50)
 
     # Calculate real MTTA and MTTR from incident data

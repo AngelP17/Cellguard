@@ -145,34 +145,32 @@
     </div>
 
     <%# Recent Activity Feed %>
-    <% if @recent_activity.any? %>
-      <div class="cg-panel" data-gsap="activity-feed">
-        <div class="cg-panel-header">
-          <div class="cg-panel-title">Recent Agent Activity</div>
-        </div>
-        <div class="divide-y divide-neutral-800">
-          <% @recent_activity.first(5).each do |activity| %>
-            <div class="px-4 py-3 flex items-start gap-3">
-              <div class="w-1.5 h-1.5 rounded-full mt-1.5 <%= activity[:status] == 'completed' ? 'bg-emerald-500' : (activity[:status] == 'failed' ? 'bg-red-500' : 'bg-amber-500') %>"></div>
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2">
-                  <span class="text-sm font-medium" style="color: var(--cg-text);"><%= activity[:agent].to_s.titleize %></span>
-                  <% if activity[:shard] %>
-                    <span class="text-xs" style="color: var(--cg-muted);"><%= activity[:shard] %></span>
-                  <% end %>
-                </div>
-                <% if activity[:action].present? %>
-                  <div class="text-xs" style="color: var(--cg-muted);"><%= activity[:action].to_s.humanize %></div>
+    <div class="cg-panel" data-gsap="activity-feed">
+      <div class="cg-panel-header">
+        <div class="cg-panel-title">Recent Agent Activity</div>
+      </div>
+      <div class="divide-y divide-neutral-800">
+        <% @recent_activity.first(5).each do |activity| %>
+          <div class="px-4 py-3 flex items-start gap-3">
+            <div class="w-1.5 h-1.5 rounded-full mt-1.5 <%= activity[:status] == 'completed' ? 'bg-emerald-500' : (activity[:status] == 'failed' ? 'bg-red-500' : 'bg-amber-500') %>"></div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-medium" style="color: var(--cg-text);"><%= activity[:agent].to_s.titleize %></span>
+                <% if activity[:shard] %>
+                  <span class="text-xs" style="color: var(--cg-muted);"><%= activity[:shard] %></span>
                 <% end %>
               </div>
-              <div class="text-xs" style="color: var(--cg-muted-dim);">
-                <%= time_ago_in_words(activity[:created_at]) %> ago
-              </div>
+              <% if activity[:action].present? %>
+                <div class="text-xs" style="color: var(--cg-muted);"><%= activity[:action].to_s.humanize %></div>
+              <% end %>
             </div>
-          <% end %>
-        </div>
+            <div class="text-xs" style="color: var(--cg-muted-dim);">
+              <%= time_ago_in_words(activity[:created_at]) %> ago
+            </div>
+          </div>
+        <% end %>
       </div>
-    <% end %>
+    </div>
   </div>
 
 <% end %>

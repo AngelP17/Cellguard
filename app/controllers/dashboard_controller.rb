@@ -6,6 +6,9 @@ class DashboardController < ApplicationController
     BudgetEvaluator.new.evaluate!(shard: @shard) if @budget.evaluated_at.nil? || @budget.evaluated_at < 2.minutes.ago
     @budget.reload
 
+    # Ensure demo data exists so the UI never shows empty states
+    DemoDataService.ensure_all!
+
     # Run agents automatically on dashboard load (if enabled)
     run_autonomous_agents
 

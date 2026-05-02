@@ -1,4 +1,5 @@
-Shard.find_or_create_by!(name: "shard-default") do |s|
+# Ensure the default shard exists
+shard = Shard.find_or_create_by!(name: "shard-default") do |s|
   s.build_error_budget(
     slo_target: 0.999,
     window_days: 30,
@@ -11,4 +12,7 @@ Shard.find_or_create_by!(name: "shard-default") do |s|
   )
 end
 
-puts "Seeded shard-default + initial error budget"
+# Generate comprehensive demo data so the UI never shows empty states
+DemoDataService.ensure_all!
+
+puts "Seeded shard-default + comprehensive demo data (#{Incident.count} incidents, #{AuditLog.count} audit logs, #{AgentExecution.count} agent executions)"

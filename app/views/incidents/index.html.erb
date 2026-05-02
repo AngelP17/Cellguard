@@ -45,13 +45,6 @@
         <% @incidents.drop(1).each do |incident| %>
           <%= render Ui::IncidentCardComponent.new(incident: incident, featured: false) %>
         <% end %>
-
-        <% if @incidents.empty? %>
-          <div class="cg-panel p-4 text-center">
-            <div class="text-sm" style="color: var(--cg-muted);">No incidents recorded.</div>
-            <div class="mt-1 text-xs" style="color: var(--cg-muted-dim);">Run <code class="font-mono">make gameday</code> to generate.</div>
-          </div>
-        <% end %>
       </div>
 
       <%# Right: Sidebar %>

@@ -159,11 +159,6 @@
               <% end %>
             </div>
           <% end %>
-          <% if @incidents.empty? %>
-            <div class="text-sm" style="color: var(--cg-muted); padding: 0.5rem;">
-              No incidents. Run <code class="font-mono">make gameday</code> to generate.
-            </div>
-          <% end %>
         </div>
       </div>
 
@@ -191,9 +186,6 @@
               </div>
               <div class="mt-1 text-xs" style="color: var(--cg-muted);"><%= a.justification %></div>
             </div>
-          <% end %>
-          <% if @audit_logs.empty? %>
-            <div class="text-sm" style="color: var(--cg-muted); padding: 0.5rem;">No audit events.</div>
           <% end %>
         </div>
       </div>
