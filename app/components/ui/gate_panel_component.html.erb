@@ -51,9 +51,9 @@
         </div>
         <div class="flex items-center gap-2 ml-auto">
           <a href="/runbooks/gameday" class="cg-btn cg-btn--secondary">View Runbook</a>
-          <a href="/api/audit_logs" class="cg-btn cg-btn--secondary" data-turbo="false">Audit Trail</a>
+          <a href="/api/audit-logs" class="cg-btn cg-btn--secondary" data-turbo="false">Audit Trail</a>
           <% unless @gate_open %>
-            <a href="/api/release_gates/override" class="cg-btn cg-btn--danger" data-turbo="false">Override</a>
+            <button type="button" class="cg-btn cg-btn--danger" onclick="window.dispatchEvent(new CustomEvent('cellguard:show-override-modal', {detail: {shard: 'shard-default'}}))">Override</button>
           <% end %>
         </div>
       </div>

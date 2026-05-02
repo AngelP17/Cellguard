@@ -8,7 +8,7 @@
     <%= favicon_link_tag "favicon.svg", type: "image/svg+xml" %>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
     <% if controller_name == "docs" %>
@@ -19,7 +19,7 @@
           startOnLoad: true,
           theme: "dark",
           securityLevel: "strict",
-          fontFamily: "Roboto, sans-serif"
+          fontFamily: "Geist, sans-serif"
         });
       </script>
     <% end %>
@@ -28,5 +28,6 @@
   <body>
     <%= yield %>
     <%= render Ui::ToastContainerComponent.new %>
+    <%= render Ui::OverrideModalComponent.new %>
   </body>
 </html>

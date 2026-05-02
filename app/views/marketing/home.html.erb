@@ -5,52 +5,51 @@
 ) do %>
 
   <div class="space-y-4" data-gsap="landing-page">
-    <%# Hero — stretch to fill height, no floating empty space %>
-    <div class="grid gap-4 md:grid-cols-2 items-stretch">
-      <div class="flex flex-col justify-center" data-gsap="hero">
-        <div class="text-3xl font-bold tracking-tight" style="color: #f8fafc;">CellGuard</div>
-        <div class="mt-1 text-lg font-medium" style="color: var(--cg-text);">Deploy decisions backed by live reliability evidence.</div>
-        <div class="mt-2 text-sm" style="color: var(--cg-muted);">Reliability control plane for release safety.</div>
+    <%# Hero — clean split layout %>
+    <div class="grid gap-6 md:grid-cols-2 items-stretch">
+      <div class="flex flex-col justify-center min-w-0" data-gsap="hero">
+        <div class="text-4xl font-bold tracking-tight" style="color: #f8fafc;">CellGuard</div>
+        <div class="mt-2 text-lg font-medium" style="color: var(--cg-text);">Deploy decisions backed by live reliability evidence.</div>
         <div class="mt-3 text-sm leading-relaxed" style="color: var(--cg-muted); max-width: 28rem;">
           Prevent bad deploys with policy-as-code, error budgets, chaos drills, and audited overrides. CellGuard evaluates every release against live SLO data and blocks deploys when reliability evidence says no.
         </div>
-        <div class="mt-4 flex flex-wrap gap-2">
-          <a href="/dashboard#game-day" class="cg-btn cg-btn--primary">Run Game Day</a>
-          <a href="/dashboard" class="cg-btn cg-btn--secondary">Open Dashboard</a>
+        <div class="mt-5 flex flex-wrap gap-2">
+          <a href="/dashboard" class="cg-btn cg-btn--primary">Open Dashboard</a>
+          <a href="/incidents" class="cg-btn cg-btn--secondary">View Incidents</a>
         </div>
       </div>
 
-      <%# Product Preview Card — taller, more evidence %>
+      <%# Product Preview Card — Live Gate Snapshot %>
       <div class="cg-panel flex flex-col" data-gsap="preview-card">
         <div class="cg-panel-header">
           <div class="cg-panel-title">Live Gate Snapshot</div>
-          <span class="cg-state-badge cg-state-badge--locked">Locked</span>
+          <span class="cg-state-badge <%= @budget.release_gate_open ? 'cg-state-badge--open' : 'cg-state-badge--locked' %>"><%= @budget.release_gate_open ? 'Open' : 'Locked' %></span>
         </div>
         <div class="p-3 flex-1 flex flex-col justify-center">
           <div class="grid grid-cols-2 gap-2">
             <div class="cg-evidence">
               <div class="cg-evidence__label">Gate Result</div>
-              <div class="cg-evidence__value is-danger">423</div>
+              <div class="cg-evidence__value <%= @budget.release_gate_open ? 'is-ok' : 'is-danger' %>"><%= @budget.release_gate_open ? '200' : '423' %></div>
             </div>
             <div class="cg-evidence">
               <div class="cg-evidence__label">Burn Rate</div>
-              <div class="cg-evidence__value is-warn">4.2x</div>
+              <div class="cg-evidence__value <%= @budget.current_burn_rate.to_f < 1.0 ? 'is-ok' : (@budget.current_burn_rate.to_f < 2.0 ? 'is-warn' : 'is-danger') %>"><%= @budget.current_burn_rate.to_f %>x</div>
             </div>
             <div class="cg-evidence">
               <div class="cg-evidence__label">Budget Remaining</div>
-              <div class="cg-evidence__value is-danger">0.00%</div>
+              <div class="cg-evidence__value <%= @budget.budget_remaining.to_f > 0.1 ? 'is-ok' : (@budget.budget_remaining.to_f > 0.0 ? 'is-warn' : 'is-danger') %>"><%= (@budget.budget_remaining.to_f * 100).round(2) %>%</div>
             </div>
             <div class="cg-evidence">
               <div class="cg-evidence__label">SLO Target</div>
-              <div class="cg-evidence__value is-ok">99.9%</div>
+              <div class="cg-evidence__value is-ok"><%= (@budget.slo_target.to_f * 100).round(1) %>%</div>
             </div>
             <div class="cg-evidence">
               <div class="cg-evidence__label">Window</div>
-              <div class="cg-evidence__value is-muted">30d</div>
+              <div class="cg-evidence__value is-muted"><%= @budget.window_days %>d</div>
             </div>
             <div class="cg-evidence">
               <div class="cg-evidence__label">Action Required</div>
-              <div class="cg-evidence__value is-muted" style="font-size: 0.72rem;">Review runbook before override</div>
+              <div class="cg-evidence__value is-muted" style="font-size: 0.72rem;"><%= @budget.release_gate_open ? 'Monitor burn rate' : 'Review runbook before override' %></div>
             </div>
           </div>
         </div>
@@ -59,7 +58,7 @@
 
     <%# Proof Strip %>
     <div class="flex flex-wrap gap-2" data-gsap="proof-strip">
-      <span class="cg-decision-badge is-success">423 Locked release gate</span>
+      <span class="cg-decision-badge is-success"><%= @budget.release_gate_open ? 'Open release gate' : '423 Locked release gate' %></span>
       <span class="cg-decision-badge is-success">SLO error budget enforcement</span>
       <span class="cg-decision-badge is-success">Chaos drill validation</span>
       <span class="cg-decision-badge is-success">Audited manual override</span>
@@ -109,7 +108,7 @@
       </div>
     </div>
 
-    <%# Bottom Evidence Section — fills empty vertical space %>
+    <%# Live System Evidence %>
     <div class="grid gap-3 md:grid-cols-3">
       <div class="cg-panel p-3" data-gsap="evidence-1">
         <div class="cg-panel-title mb-2">Policy-as-Code Gates</div>
@@ -144,6 +143,36 @@
         </div>
       </div>
     </div>
+
+    <%# Recent Activity Feed %>
+    <% if @recent_activity.any? %>
+      <div class="cg-panel" data-gsap="activity-feed">
+        <div class="cg-panel-header">
+          <div class="cg-panel-title">Recent Agent Activity</div>
+        </div>
+        <div class="divide-y divide-neutral-800">
+          <% @recent_activity.first(5).each do |activity| %>
+            <div class="px-4 py-3 flex items-start gap-3">
+              <div class="w-1.5 h-1.5 rounded-full mt-1.5 <%= activity[:status] == 'completed' ? 'bg-emerald-500' : (activity[:status] == 'failed' ? 'bg-red-500' : 'bg-amber-500') %>"></div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="text-sm font-medium" style="color: var(--cg-text);"><%= activity[:agent].to_s.titleize %></span>
+                  <% if activity[:shard] %>
+                    <span class="text-xs" style="color: var(--cg-muted);"><%= activity[:shard] %></span>
+                  <% end %>
+                </div>
+                <% if activity[:action].present? %>
+                  <div class="text-xs" style="color: var(--cg-muted);"><%= activity[:action].to_s.humanize %></div>
+                <% end %>
+              </div>
+              <div class="text-xs" style="color: var(--cg-muted-dim);">
+                <%= time_ago_in_words(activity[:created_at]) %> ago
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
   </div>
 
 <% end %>

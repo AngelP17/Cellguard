@@ -1,13 +1,13 @@
-<div class="cg-panel" data-gsap="demo-flow">
+<div class="cg-panel" data-controller="demo-flow" data-demo-flow-shard-value="shard-default" data-gsap="demo-flow">
   <div class="cg-panel-header">
     <div class="flex items-center gap-2">
       <div class="cg-panel-title">30-Second Demo Flow</div>
       <span class="cg-decision-badge is-recommended">Live</span>
     </div>
     <div class="flex items-center gap-2">
-      <button type="button" class="cg-btn cg-btn--sm cg-btn--primary" data-action="click->shell#runDemo">Run Full Demo</button>
-      <button type="button" class="cg-btn cg-btn--sm">Reset</button>
-      <button type="button" class="cg-btn cg-btn--sm">Step</button>
+      <button type="button" data-demo-action="run" class="cg-btn cg-btn--sm cg-btn--primary" data-action="click->demo-flow#runFullDemo">Run Full Demo</button>
+      <button type="button" data-demo-action="reset" class="cg-btn cg-btn--sm" data-action="click->demo-flow#resetDemo">Reset</button>
+      <button type="button" data-demo-action="step" class="cg-btn cg-btn--sm" data-action="click->demo-flow#stepDemo">Step</button>
     </div>
   </div>
   <div class="cg-demo">

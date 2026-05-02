@@ -62,47 +62,47 @@
       </article>
     </div>
 
-    <%# Row 2: Agents wide + Error Budget + Chaos — stretch to equal height %>
-    <div class="grid gap-3 md:grid-cols-3 items-stretch">
-      <%# Autonomous Agents — Wide card %>
-      <div class="md:col-span-1 cg-panel flex flex-col" data-gsap="agent-activity">
-        <div class="cg-panel-header">
-          <div class="flex items-center gap-2">
-            <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-            <div class="cg-panel-title" style="margin:0;">Autonomous Agents</div>
-          </div>
-        </div>
-        <div class="p-2 flex-1">
-          <%= render Ui::AgentActivityComponent.new(
-            agents: @agent_status,
-            recent_activity: @agent_activity
-          ) %>
+    <%# Row 2: Autonomous Agents — Full width for density %>
+    <div class="cg-panel" data-gsap="agent-activity">
+      <div class="cg-panel-header">
+        <div class="flex items-center gap-2">
+          <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+          <div class="cg-panel-title" style="margin:0;">Autonomous Agents</div>
         </div>
       </div>
+      <div class="p-3">
+        <%= render Ui::AgentActivityComponent.new(
+          agents: @agent_status,
+          recent_activity: @agent_activity
+        ) %>
+      </div>
+    </div>
 
+    <%# Row 3: Error Budget + Chaos Engineering %>
+    <div class="grid gap-3 md:grid-cols-2 items-stretch">
       <%# Error Budget %>
       <div class="cg-panel flex flex-col" data-gsap="budget-panel">
         <div class="cg-panel-header">
           <div class="cg-panel-title">Error Budget</div>
         </div>
-        <div class="p-3 flex-1 flex flex-col justify-center">
+        <div class="p-4 flex-1 flex flex-col justify-center">
           <%= render Ui::BudgetMeterComponent.new(remaining: @budget.budget_remaining.to_f) %>
-          <div class="mt-3 grid grid-cols-2 gap-3 text-xs">
+          <div class="mt-4 grid grid-cols-2 gap-4 text-xs">
             <div>
-              <div style="color: var(--cg-muted-dim); font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">SLO Target</div>
-              <div class="font-mono mt-0.5" style="color: var(--cg-text);"><%= (@budget.slo_target.to_f * 100).round(1) %>%</div>
+              <div style="color: var(--cg-muted-dim); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">SLO Target</div>
+              <div class="font-mono mt-1" style="color: var(--cg-text);"><%= (@budget.slo_target.to_f * 100).round(1) %>%</div>
             </div>
             <div>
-              <div style="color: var(--cg-muted-dim); font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Window</div>
-              <div class="font-mono mt-0.5" style="color: var(--cg-text);"><%= @budget.window_days %>d</div>
+              <div style="color: var(--cg-muted-dim); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Window</div>
+              <div class="font-mono mt-1" style="color: var(--cg-text);"><%= @budget.window_days %>d</div>
             </div>
             <div>
-              <div style="color: var(--cg-muted-dim); font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Consumed</div>
-              <div class="font-mono mt-0.5" style="color: var(--cg-text);"><%= (@budget.budget_consumed.to_f * 100).round(2) %>%</div>
+              <div style="color: var(--cg-muted-dim); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Consumed</div>
+              <div class="font-mono mt-1" style="color: var(--cg-text);"><%= (@budget.budget_consumed.to_f * 100).round(2) %>%</div>
             </div>
             <div>
-              <div style="color: var(--cg-muted-dim); font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Burn Rate</div>
-              <div class="font-mono mt-0.5" style="color: var(--cg-text);"><%= @budget.current_burn_rate.to_f %>x</div>
+              <div style="color: var(--cg-muted-dim); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Burn Rate</div>
+              <div class="font-mono mt-1" style="color: var(--cg-text);"><%= @budget.current_burn_rate.to_f %>x</div>
             </div>
           </div>
         </div>
@@ -113,7 +113,7 @@
         <div class="cg-panel-header">
           <div class="cg-panel-title">Chaos Engineering</div>
         </div>
-        <div class="p-2 flex-1">
+        <div class="p-3 flex-1">
           <%= render Ui::ChaosGamedayComponent.new(
             shard: @shard.name,
             default_duration: 20,
@@ -123,7 +123,7 @@
       </div>
     </div>
 
-    <%# Row 3: Recent Incidents + Audit Trail %>
+    <%# Row 4: Recent Incidents + Audit Trail %>
     <div class="grid gap-3 md:grid-cols-2">
       <div class="cg-panel" data-gsap="incidents-panel">
         <div class="cg-panel-header">
@@ -135,17 +135,17 @@
           </div>
           <a href="/incidents" class="cg-btn cg-btn--sm cg-btn--secondary">View All</a>
         </div>
-        <div class="p-2 space-y-2">
+        <div class="p-3 space-y-2">
           <% @incidents.first(5).each do |i| %>
-            <div class="cg-evidence" style="padding: 0.5rem 0.65rem;">
+            <div class="cg-evidence" style="padding: 0.6rem 0.75rem; background: rgba(0,0,0,0.25);">
               <div class="flex items-center justify-between gap-2">
-                <div class="text-sm font-medium truncate"><%= i.title %></div>
+                <div class="text-sm font-medium truncate" style="color: var(--cg-text-bright);"><%= i.title %></div>
                 <span class="cg-severity cg-severity--<%= i.severity_label.to_s.downcase %>"><%= i.severity_label %></span>
               </div>
-              <div class="mt-1 text-xs" style="color: var(--cg-muted);">
+              <div class="mt-1 text-xs" style="color: var(--cg-text);">
                 <%= i.status %> • <%= time_ago_in_words(i.created_at) %> ago
                 <% if i.shard&.name.present? %>
-                  • <span class="font-mono"><%= i.shard.name %></span>
+                  • <span class="font-mono" style="color: var(--cg-text-bright);"><%= i.shard.name %></span>
                 <% end %>
               </div>
               <% if i.context&.dig("suggested_runbooks").present? %>
@@ -176,20 +176,20 @@
             </div>
           </div>
         </div>
-        <div class="p-2 space-y-2">
+        <div class="p-3 space-y-2">
           <% @audit_logs.first(5).each do |a| %>
-            <div class="cg-evidence" style="padding: 0.5rem 0.65rem;">
+            <div class="cg-evidence" style="padding: 0.6rem 0.75rem; background: rgba(0,0,0,0.25);">
               <div class="flex items-center justify-between gap-2">
-                <div class="text-sm font-medium"><%= a.action %></div>
-                <div class="text-xs font-mono" style="color: var(--cg-muted-dim);"><%= time_ago_in_words(a.created_at) %></div>
+                <div class="text-sm font-medium" style="color: var(--cg-text-bright);"><%= a.action %></div>
+                <div class="text-xs font-mono" style="color: var(--cg-muted);"><%= time_ago_in_words(a.created_at) %></div>
               </div>
-              <div class="mt-0.5 text-xs" style="color: var(--cg-muted);">
+              <div class="mt-0.5 text-xs" style="color: var(--cg-text);">
                 <%= a.actor %>
                 <% if a.shard&.name.present? %>
-                  • <span class="font-mono"><%= a.shard.name %></span>
+                  • <span class="font-mono" style="color: var(--cg-text-bright);"><%= a.shard.name %></span>
                 <% end %>
               </div>
-              <div class="mt-1 text-xs" style="color: var(--cg-text);"><%= a.justification %></div>
+              <div class="mt-1 text-xs" style="color: var(--cg-muted);"><%= a.justification %></div>
             </div>
           <% end %>
           <% if @audit_logs.empty? %>

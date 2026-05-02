@@ -23,6 +23,12 @@ Rails.application.routes.draw do
     # Governance
     get  "audit-logs", to: "audit_logs#index"
 
+    # Incident lifecycle
+    post "incidents/:id/acknowledge", to: "incidents#acknowledge"
+    post "incidents/:id/resolve",     to: "incidents#resolve"
+    post "incidents/:id/escalate",    to: "incidents#escalate"
+    post "incidents/:id/note",        to: "incidents#note"
+
     # Agent management (autonomous control plane)
     get  "agents/status",   to: "agents#status"
     get  "agents/activity", to: "agents#activity"

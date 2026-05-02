@@ -29,7 +29,7 @@ flowchart LR
 
 ---
 
-## 🚀 Run The Local Demo (30 Seconds)
+## Run The Local Demo (30 Seconds)
 
 CellGuard is currently documented as local-first (no public hosted demo link).
 Use the local stack:
@@ -69,36 +69,78 @@ open http://localhost:3000/dashboard
 
 ---
 
-## 👀 UI Entry Points
+## UI Entry Points
 
 When running locally:
-- `http://localhost:3000/`
-- `http://localhost:3000/dashboard`
-- `http://localhost:3000/incidents`
+- `http://localhost:3000/` — Landing page with live gate snapshot
+- `http://localhost:3000/dashboard` — Mission Control dashboard
+- `http://localhost:3000/incidents` — Incident triage workspace
 
-## 📸 Screenshots
+---
+
+## Screenshots
 
 ### Landing Page
 ![Landing Page](./screenshots/landing.png)
 
+### Dashboard — Mission Control
+![Dashboard](./screenshots/dashboard.png)
 
-
-### Runbook — Guided Operator Workflow
-![Runbook](./screenshots/runbook.png)
+### Incidents — Triage Workspace
+![Incidents](./screenshots/incidents.png)
 
 ---
 
-Automated UI capture (Go Rod + stealth):
+## Architecture
 
-```bash
-make go-ui-smoke
+```mermaid
+flowchart TB
+    subgraph "Web Layer"
+        LAND["Landing Page"]
+        DASH["Dashboard"]
+        INC["Incidents"]
+    end
+
+    subgraph "API Layer"
+        GATE["/api/release-gate/*"]
+        EVAL["/api/evaluate"]
+        CHAOS["/api/chaos/*"]
+        AGENTS["/api/agents/*"]
+        AUDIT["/api/audit-logs"]
+        INC_API["/api/incidents/*"]
+    end
+
+    subgraph "Services"
+        BG_SVC["BudgetEvaluator"]
+        CH_SVC["ChaosService"]
+        CL_SVC["ClassifierClient"]
+        SCH_SVC["AgentScheduler"]
+    end
+
+    subgraph "Data Layer"
+        PG[(PostgreSQL)]
+        RD[(Redis)]
+    end
+
+    LAND --> GATE
+    DASH --> GATE
+    DASH --> AGENTS
+    INC --> INC_API
+
+    GATE --> BG_SVC
+    EVAL --> BG_SVC
+    EVAL --> CL_SVC
+    CHAOS --> CH_SVC
+    AGENTS --> SCH_SVC
+
+    BG_SVC --> PG
+    CH_SVC --> RD
+    SCH_SVC --> RD
+    INC_API --> PG
+    AUDIT --> PG
 ```
 
-This writes a screenshot to `tmp/ui-dashboard.png`.
-
----
-
-## 🏗️ Architecture Highlights
+### Request Flow
 
 ```mermaid
 sequenceDiagram
@@ -124,7 +166,7 @@ sequenceDiagram
 
 ---
 
-## 💻 Local Development (For Contributors)
+## Local Development
 
 ### Prerequisites
 - Ruby `3.3.0`
@@ -167,9 +209,9 @@ curl -X POST http://localhost:3000/api/agents/run-all \
   -d '{"async":true}'
 ```
 
-### Go Execution Plane (Classifier + Agent Runner)
+### Go Execution Plane
 
-This repo now includes two Go services:
+This repo includes two Go services:
 - `go/classifier` (`/classify`, `/healthz`, `/metrics`)
 - `go/agent-runner` (periodic agent loop calling Rails HTTP APIs)
 
@@ -179,18 +221,11 @@ Run locally:
 # Terminal 4: Classifier service on :8081
 make go-classifier-run
 
-# Terminal 5: Agent runner (safe defaults; chaos disabled unless enabled explicitly)
+# Terminal 5: Agent runner
 make go-agent-runner-run
 ```
 
-Enable autonomous chaos from runner (optional):
-
-```bash
-cd go/agent-runner
-RAILS_BASE_URL=http://localhost:3000 SHARD=shard-default AGENT_RUNNER_ENABLE_CHAOS=true go run ./cmd/runner
-```
-
-### If dashboard shows `LOCKED (423)` and you want a fresh local state
+### Reset demo state
 
 ```bash
 make reset-demo
@@ -199,7 +234,7 @@ make enable-chaos-orchestrator   # optional
 
 ---
 
-## 🔌 Core APIs
+## Core APIs
 
 | Endpoint | Purpose |
 |----------|---------|
@@ -209,11 +244,20 @@ make enable-chaos-orchestrator   # optional
 | `POST /api/evaluate` | Trigger budget evaluation |
 | `POST /api/inject-failures` | Demo: simulate failures |
 | `POST /api/chaos/partition` | Demo: network partition |
+| `POST /api/chaos/heal` | Recover from chaos |
 | `GET /api/agents/status` | View autonomous agent status |
+| `POST /api/agents/run-all` | Run all enabled agents |
+| `POST /api/agents/:name/run` | Run specific agent |
+| `POST /api/agents/:name/toggle` | Enable/disable agent |
+| `POST /api/incidents/:id/acknowledge` | Acknowledge incident |
+| `POST /api/incidents/:id/resolve` | Resolve incident |
+| `POST /api/incidents/:id/escalate` | Escalate incident |
+| `POST /api/incidents/:id/note` | Add note to incident |
+| `GET /api/audit-logs` | View audit trail |
 
 ---
 
-## 🎮 Game Day Proof
+## Game Day Proof
 
 ```bash
 make gameday
@@ -227,14 +271,14 @@ This deterministic script proves the policy enforcement:
 
 ---
 
-## 🚢 Deployment
+## Deployment
 
 Public hosting docs are intentionally deferred until a production-ready demo/video is published.
 Current source of truth is local execution + CI gate proof.
 
 ---
 
-## 📊 Roadmap
+## Roadmap
 
 ```mermaid
 gantt
@@ -244,6 +288,7 @@ gantt
     Runnable MVP and gate proof       :done, c1, 2026-02-01, 7d
     Sidekiq scheduled parallel agents :done, c2, 2026-02-08, 5d
     UX + SRE scorecards + runbook nav :done, c3, 2026-02-17, 2d
+    Incident lifecycle + actions      :done, c4, 2026-05-02, 1d
     section Next
     Public demo/video publishing      :n0, 2026-02-20, 4d
     Prometheus /metrics endpoint      :active, n1, 2026-02-18, 3d
@@ -252,7 +297,7 @@ gantt
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 - [Agent Runtime Design](./docs/AGENTS.md)
 - [Game Day Runbook](./docs/runbooks/gameday.md)
@@ -260,7 +305,7 @@ gantt
 
 ---
 
-## 🔐 Security & Governance
+## Security & Governance
 
 - All gate overrides are audited
 - Chaos endpoints require `ALLOW_DEMO_ENDPOINTS=true`
@@ -269,7 +314,7 @@ gantt
 
 ---
 
-## 🎯 For Recruiters
+## For Recruiters
 
 **The 30-second pitch**:
 
@@ -282,5 +327,7 @@ gantt
 - Sidekiq + Redis for reliable job processing
 - Policy-as-code (423 status) for CI integration
 - Autonomous agent layer for proactive reliability
+- Geist + JetBrains Mono typography
+- ActionCable for real-time activity feeds
 
 ---

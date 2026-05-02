@@ -6,7 +6,7 @@
 
   <% featured = @incidents.first %>
 
-  <div class="space-y-3" data-gsap="incidents-page">
+  <div class="space-y-3" data-gsap="incidents-page" data-controller="incident-actions">
     <%# Filter Bar %>
     <%= render Ui::IncidentFilterBarComponent.new %>
 
@@ -24,12 +24,12 @@
       </div>
       <div class="cg-scorecard">
         <div class="cg-scorecard__label">MTTA (30d)</div>
-        <div class="cg-scorecard__value">—</div>
+        <div class="cg-scorecard__value"><%= @mtta_label %></div>
         <div class="cg-scorecard__meta">Mean time to acknowledge</div>
       </div>
       <div class="cg-scorecard">
         <div class="cg-scorecard__label">MTTR (30d)</div>
-        <div class="cg-scorecard__value">—</div>
+        <div class="cg-scorecard__value"><%= @mttr_label %></div>
         <div class="cg-scorecard__meta">Mean time to resolve</div>
       </div>
     </div>
@@ -104,10 +104,10 @@
               <% else %>
                 <a href="/runbooks/gameday?incident_id=<%= featured.id %>" class="cg-btn cg-btn--primary w-full">View Runbook</a>
               <% end %>
-              <button type="button" class="cg-btn cg-btn--secondary w-full">Acknowledge</button>
-              <button type="button" class="cg-btn cg-btn--danger w-full">Escalate</button>
-              <button type="button" class="cg-btn cg-btn--secondary w-full">Resolve</button>
-              <button type="button" class="cg-btn cg-btn--sm w-full" style="color: var(--cg-muted);">Add Note</button>
+              <button type="button" class="cg-btn cg-btn--secondary w-full" data-incident-id="<%= featured.id %>" data-action="click->incident-actions#acknowledge">Acknowledge</button>
+              <button type="button" class="cg-btn cg-btn--danger w-full" data-incident-id="<%= featured.id %>" data-action="click->incident-actions#escalate">Escalate</button>
+              <button type="button" class="cg-btn cg-btn--secondary w-full" data-incident-id="<%= featured.id %>" data-action="click->incident-actions#resolve">Resolve</button>
+              <button type="button" class="cg-btn cg-btn--sm w-full" style="color: var(--cg-muted);" data-incident-id="<%= featured.id %>" data-action="click->incident-actions#addNote">Add Note</button>
             </div>
           </div>
 
@@ -159,6 +159,17 @@
                   <div class="text-xs font-mono" style="color: var(--cg-muted-dim);">—</div>
                 </div>
               </div>
+              <% if ctx["notes"].present? %>
+                <% ctx["notes"].each do |note| %>
+                  <div class="flex items-start gap-2">
+                    <div class="w-1.5 h-1.5 rounded-full mt-1" style="background: var(--cg-ok);"></div>
+                    <div>
+                      <div class="text-xs" style="color: var(--cg-text);"><%= note["text"] || note[:text] %></div>
+                      <div class="text-xs font-mono" style="color: var(--cg-muted-dim);"><%= note["actor"] || note[:actor] %> — <%= time_ago_in_words(note["created_at"] || note[:created_at]) %> ago</div>
+                    </div>
+                  </div>
+                <% end %>
+              <% end %>
             </div>
           </div>
 

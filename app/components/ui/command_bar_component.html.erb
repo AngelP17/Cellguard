@@ -1,4 +1,4 @@
-<div class="cg-command-bar" data-controller="command-bar">
+<div class="cg-command-bar" data-controller="command-bar" data-command-bar-shard-value="<%= @shard %>">
   <div class="cg-command-bar__group">
     <div class="cg-command-bar__metric">
       <div class="cg-command-bar__label">Shard</div>
@@ -26,9 +26,9 @@
   </div>
 
   <div class="cg-command-bar__actions">
-    <a href="/dashboard" class="cg-btn cg-btn--primary" data-turbo="false">Run Evaluation</a>
-    <a href="/dashboard#game-day" class="cg-btn cg-btn--secondary">Run Game Day</a>
+    <button type="button" class="cg-btn cg-btn--primary" data-action="click->command-bar#runEvaluation">Run Evaluation</button>
+    <button type="button" class="cg-btn cg-btn--secondary" data-action="click->command-bar#runGameDay">Run Game Day</button>
     <button type="button" class="cg-btn cg-btn--secondary" data-controller="gameday" data-action="click->gameday#heal">Heal</button>
-    <a href="/api/release_gates/override" class="cg-btn cg-btn--danger" data-turbo="false">Override</a>
+    <button type="button" class="cg-btn cg-btn--danger" data-action="click->command-bar#showOverrideModal">Override</button>
   </div>
 </div>
