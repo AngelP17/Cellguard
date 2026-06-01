@@ -6,21 +6,27 @@
         <span class="cg-float-nav__icon">&#9671;</span>
         CellGuard
       </a>
-      <nav class="cg-top-nav" aria-label="Primary">
-        <% nav_items.each do |item| %>
-          <a href="<%= item[:href] %>" class="<%= nav_link_classes(item[:active]) %>" <% if item[:active] %>aria-current="page"<% end %>>
-            <%= heroicon(item[:icon], classes: "cg-top-nav__icon") %>
-            <span><%= item[:label] %></span>
-          </a>
-        <% end %>
-      </nav>
+      <div class="flex items-center gap-3">
+        <span class="<%= HealthStatusService.badge_class %>" title="System health: <%= HealthStatusService.badge_label %>">
+          <span class="cg-health-badge__dot"></span>
+          <%= HealthStatusService.badge_label %>
+        </span>
+        <nav class="cg-top-nav" aria-label="Primary">
+          <% nav_items.each do |item| %>
+            <a href="<%= item[:href] %>" class="<%= nav_link_classes(item[:active]) %>" <% if item[:active] %>aria-current="page"<% end %>>
+              <%= heroicon(item[:icon], classes: "cg-top-nav__icon") %>
+              <span><%= item[:label] %></span>
+            </a>
+          <% end %>
+        </nav>
+      </div>
     </header>
 
     <%= content %>
 
     <footer class="cg-landing-footer">
       <span>CellGuard — Policy-as-code release safety</span>
-      <span class="font-mono" style="color: var(--cg-muted-dim);">v1.0.0</span>
+      <span class="font-mono" style="color: var(--cg-muted-dim);">v<%= CellGuardVersion.label %></span>
     </footer>
   </div>
 </div>
@@ -36,21 +42,27 @@
         <% end %>
       </div>
 
-      <nav class="cg-top-nav" aria-label="Primary">
-        <% nav_items.each do |item| %>
-          <a href="<%= item[:href] %>" class="<%= nav_link_classes(item[:active]) %>" <% if item[:active] %>aria-current="page"<% end %>>
-            <%= heroicon(item[:icon], classes: "cg-top-nav__icon") %>
-            <span><%= item[:label] %></span>
-          </a>
-        <% end %>
-      </nav>
+      <div class="flex items-center gap-3">
+        <span class="<%= HealthStatusService.badge_class %>" title="System health: <%= HealthStatusService.badge_label %>">
+          <span class="cg-health-badge__dot"></span>
+          <%= HealthStatusService.badge_label %>
+        </span>
+        <nav class="cg-top-nav" aria-label="Primary">
+          <% nav_items.each do |item| %>
+            <a href="<%= item[:href] %>" class="<%= nav_link_classes(item[:active]) %>" <% if item[:active] %>aria-current="page"<% end %>>
+              <%= heroicon(item[:icon], classes: "cg-top-nav__icon") %>
+              <span><%= item[:label] %></span>
+            </a>
+          <% end %>
+        </nav>
+      </div>
     </header>
 
     <%= content %>
 
     <div class="cg-shell-footer">
       <span>CellGuard Mission Control — Policy-as-code • Auditability • Closed-loop reliability</span>
-      <span class="font-mono" style="color: var(--cg-muted-dim);">v1.0.0</span>
+      <span class="font-mono" style="color: var(--cg-muted-dim);">v<%= CellGuardVersion.label %></span>
     </div>
   </div>
 </div>
