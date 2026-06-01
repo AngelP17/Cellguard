@@ -2,6 +2,10 @@
 
 module Api
   class ReleaseGatesController < ApplicationController
+    include ::Api::StructuredErrors
+    include ::Api::RequestAudit
+    include ::Api::TokenGuard
+
     protect_from_forgery with: :null_session
 
     def check
@@ -31,6 +35,8 @@ module Api
     end
 
     def override
+      require_admin_token!
+
       shard = Shard.find_by!(name: params.fetch(:shard))
       actor = params.fetch(:actor).to_s.strip
       justification = params.fetch(:justification).to_s.strip
@@ -38,12 +44,11 @@ module Api
       raise ActionController::BadRequest, "actor required" if actor.empty?
       raise ActionController::BadRequest, "justification required" if justification.empty?
 
-      AuditLog.create!(
-        shard: shard,
-        actor: actor,
+      audit_request!(
         action: "override_gate",
+        shard: shard,
         justification: justification,
-        metadata: { ip: request.remote_ip, user_agent: request.user_agent }
+        metadata: { actor: actor }
       )
 
       render json: { status: "override_recorded", shard: shard.name }

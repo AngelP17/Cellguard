@@ -3,6 +3,11 @@ Rails.application.routes.draw do
   mount ActionCable.server => "/cable"
 
   namespace :api do
+    # Health and readiness (public probes for Docker / load balancers)
+    get "healthz", to: "health#healthz"
+    get "readyz",  to: "health#readyz"
+    get "status",  to: "health#status"
+
     # Policy wedge
     get  "release-gate/check",    to: "release_gates#check"
     post "release-gate/override", to: "release_gates#override"

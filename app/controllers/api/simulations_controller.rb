@@ -2,9 +2,13 @@
 
 module Api
   class SimulationsController < ApplicationController
+    include ::Api::StructuredErrors
+    include ::Api::TokenGuard
+
     protect_from_forgery with: :null_session
 
     def inject_failures
+      require_admin_token!
       raise ActionController::Forbidden unless Rails.env.development? || ENV["ALLOW_DEMO_ENDPOINTS"] == "true"
 
       shard_name = params.fetch(:shard)

@@ -1,9 +1,9 @@
 # CellGuard Autonomous Agents (Canonical Runtime Contract)
 
-This document mirrors the authoritative runtime contract from `/Users/apinzon/Desktop/Active Projects/Cellguard/AGENTS.md`.
+This document mirrors the authoritative runtime contract from [`/AGENTS.md`](../AGENTS.md) at the repository root.
 
 ## Canonical source
-- `/Users/apinzon/Desktop/Active Projects/Cellguard/AGENTS.md`
+- `AGENTS.md` (repository root)
 
 ## Runtime summary
 - Agents: `budget_guard`, `chaos_orchestrator`, `incident_response`, `healing`
@@ -12,6 +12,7 @@ This document mirrors the authoritative runtime contract from `/Users/apinzon/De
   - CI/production path: Sidekiq + Redis scheduler fanout
 - Safety:
   - chaos actions only in development or with `ALLOW_DEMO_ENDPOINTS=true`
+  - privileged mutations require `X-CELLGUARD-TOKEN` in production
   - full execution audit trail in `agent_executions` and `audit_logs`
 
 ## Execution path
@@ -28,6 +29,6 @@ flowchart LR
 ## API surface
 - `GET /api/agents/status`
 - `GET /api/agents/activity`
-- `POST /api/agents/run-all`
-- `POST /api/agents/:name/run`
-- `POST /api/agents/:name/toggle`
+- `POST /api/agents/run-all` (requires `X-CELLGUARD-TOKEN` in production)
+- `POST /api/agents/:name/run` (requires `X-CELLGUARD-TOKEN` in production)
+- `POST /api/agents/:name/toggle` (requires `X-CELLGUARD-TOKEN` in production)

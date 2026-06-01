@@ -2,9 +2,15 @@
 
 module Api
   class EvaluationsController < ApplicationController
+    include ::Api::StructuredErrors
+    include ::Api::RequestAudit
+    include ::Api::TokenGuard
+
     protect_from_forgery with: :null_session
 
     def create
+      require_admin_token!
+
       shard = Shard.find_by!(name: params.fetch(:shard))
       budget = BudgetEvaluator.new.evaluate!(shard: shard)
 
@@ -51,6 +57,13 @@ module Api
         )
       end
 
+      audit_request!(
+        action: "evaluation_run",
+        shard: shard,
+        justification: "Manual evaluation: window=#{minutes}min",
+        metadata: { window_minutes: minutes, total: total, errors: errors, violation: decision["is_violation"] }
+      )
+
       render json: {
         shard: shard.name,
         budget: {
@@ -61,8 +74,6 @@ module Api
         },
         classifier: decision
       }
-    rescue KeyError => e
-      render json: { error: "bad_request", message: e.message }, status: :bad_request
     end
   end
 end

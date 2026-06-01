@@ -1,154 +1,312 @@
-# CellGuard Autonomous Agents
+# CellGuard
 
-This document defines the runtime autonomous-agent layer used by CellGuard.
-
-## Scope
-CellGuard runs four canonical agents:
-- `budget_guard`
-- `chaos_orchestrator`
-- `incident_response`
-- `healing`
-
-These names are the API and persistence contract (`agent_executions.agent_name`, `/api/agents/:name/*`).
+Reliability control plane that enforces release policy from live operational signals. Prevents bad deploys by evaluating release gates against error budgets, orchestrating chaos drills, and running autonomous agents for budget protection, incident response, and healing.
 
 ## Architecture
 
 ```mermaid
 flowchart TB
-    SCH["AgentScheduler"] --> CFG["AgentConfig"]
-    SCH --> EX["AgentExecution"]
-    SCH --> BG["budget_guard"]
-    SCH --> CO["chaos_orchestrator"]
-    SCH --> IR["incident_response"]
-    SCH --> HE["healing"]
+    subgraph "Client Layer"
+        UI["Browser (Operator / CI)"]
+        CI["CI Pipeline"]
+    end
 
-    BG --> CP["Control Plane APIs"]
-    CO --> CP
-    IR --> CP
-    HE --> CP
+    subgraph "Rails Web (port 3000)"
+        WEB["Rails 7.1 + Hotwire + ViewComponent"]
+        AC["ActionCable (AgentActivityChannel)"]
+    end
 
-    CP --> DB["Postgres"]
-    CP --> WS["AgentActivityChannel"]
+    subgraph "Control Plane API"
+        GATE["/api/release-gate/*"]
+        EVAL["/api/evaluate"]
+        CHAOS["/api/chaos/*"]
+        AGENTS["/api/agents/*"]
+        INC["/api/incidents/*"]
+        AUDIT["/api/audit-logs"]
+        HEALTH["/api/healthz, /readyz, /status"]
+    end
+
+    subgraph "Background Workers"
+        SK["Sidekiq + Redis"]
+        SCHED["AgentScheduler (cron-like)"]
+    end
+
+    subgraph "Autonomous Agents"
+        BG["budget_guard"]
+        CO["chaos_orchestrator"]
+        IR["incident_response"]
+        HE["healing"]
+    end
+
+    subgraph "Go Execution Plane"
+        CLASS["go/classifier (:8081)"]
+        RUNNER["go/agent-runner (cron loop)"]
+    end
+
+    subgraph "Data Layer"
+        PG[("PostgreSQL")]
+        RD[("Redis")]
+    end
+
+    UI --> WEB
+    CI --> GATE
+    WEB --> GATE
+    WEB --> AGENTS
+    WEB --> INC
+    WEB --> AC
+    GATE --> PG
+    EVAL --> PG
+    EVAL --> CLASS
+    CHAOS --> RD
+    AGENTS --> SCHED
+    SCHED --> SK
+    SK --> BG
+    SK --> CO
+    SK --> IR
+    SK --> HE
+    BG --> PG
+    CO --> CHAOS
+    IR --> INC
+    HE --> PG
+    HE --> RD
+    CLASS --> PG
+    RUNNER --> AGENTS
+    AC --> WEB
 ```
 
-## Execution model
+## Core invariants
 
-Hybrid runtime:
-- Development mode: in-process/manual runs for fast feedback
-- Production and CI-ready mode: Sidekiq + Redis with scheduler-driven fanout
+1. **Gate is the source of truth.** `POST /api/release-gate/check` is the only path CI calls. It must be deterministic given the same inputs.
+2. **Chaos is opt-in.** Chaos endpoints and the `chaos_orchestrator` agent require `ALLOW_DEMO_ENDPOINTS=true` or development mode. Never auto-enable in production.
+3. **All mutations are audited.** `release-gate/override`, `chaos/*`, `agents/:name/toggle`, `agents/:name/run`, `incidents/*` mutations, and `evaluate` all write to `audit_logs` with actor, method, path, IP, and timestamp.
+4. **Token-guarded mutations.** Outside of development/demo, privileged endpoints require `X-CELLGUARD-TOKEN`. `GET` endpoints (`healthz`, `readyz`, `status`, `release-gate/check`, `agents/status`, `agents/activity`) are public.
+5. **No raw exception leakage.** All API errors return structured JSON (`{ error, message }`). Production never echoes exception messages.
 
-```mermaid
-sequenceDiagram
-    participant T as Trigger
-    participant A as AgentsController
-    participant S as AgentScheduler
-    participant Q as Sidekiq
-    participant W as AgentRunJob
-    participant G as Agent
-    participant E as AgentExecution
+## Runtime contract
 
-    T->>A: POST /api/agents/run-all {"async": true}
-    A->>S: run_all_parallel
-    S->>Q: enqueue one job per enabled agent x shard
-    Q->>W: perform(agent_name, shard)
-    W->>G: run(shard)
-    G->>E: persist execution result
-```
+The four canonical agents are the API and persistence contract (`agent_executions.agent_name`, `/api/agents/:name/*`, `AgentScheduler`):
 
-Scheduler source:
-- `config/sidekiq.yml` (`agent_scheduler` every 60s)
-- `AgentSchedulerJob` enqueues periodic work
+- `budget_guard` — monitors error budget burn rate, predicts exhaustion
+- `chaos_orchestrator` — schedules controlled failure drills when safety checks pass
+- `incident_response` — auto-suggests runbooks for new incidents
+- `healing` — attempts low-risk recovery actions with auditability
 
 ## Safety model
-Chaos-impacting behavior must remain guarded:
-- Allowed only in development or with `ALLOW_DEMO_ENDPOINTS=true`
-- Agents must enforce business-hour and incident-aware checks for chaos actions
-- Retry limits and bounded blast radius required
-- Errors must be structured (`chaos_failed`) and auditable
+
+- Chaos-impacting behavior is guarded:
+  - Allowed only in development or with `ALLOW_DEMO_ENDPOINTS=true`
+  - Agents enforce business-hour and incident-aware checks for chaos actions
+  - Retry limits and bounded blast radius required
+  - Errors are structured (`chaos_failed`) and auditable
 
 ## Configuration contract
-Core:
-- `CELLGUARD_AGENTS_ENABLED`
-- `CELLGUARD_AGENT_EXECUTION_INTERVAL_SECONDS`
-- `ALLOW_DEMO_ENDPOINTS`
-- `CLASSIFIER_STUB`
-- `CELLGUARD_TOKEN`
 
-Per-agent toggles (env defaults + DB override via `agent_configs`):
-- `CELLGUARD_BUDGET_GUARD_ENABLED`
-- `CELLGUARD_CHAOS_ORCHESTRATOR_ENABLED`
-- `CELLGUARD_INCIDENT_RESPONSE_ENABLED`
-- `CELLGUARD_HEALING_AGENT_ENABLED`
+### Core (env)
 
-Precedence:
-1. Persisted `agent_configs` override
-2. Environment default
+| Variable | Purpose |
+|----------|---------|
+| `CELLGUARD_TOKEN` | Admin token for privileged API mutations (required in production) |
+| `ALLOW_DEMO_ENDPOINTS` | Enable chaos + failure injection (dev/demo only) |
+| `CLASSIFIER_STUB` | Use in-process Ruby classifier (no Go service required) |
+| `CLASSIFIER_URL` | URL of the Go classifier (default `http://localhost:8081`) |
+| `CELLGUARD_AGENTS_ENABLED` | Master switch for the autonomous agent layer |
+| `CELLGUARD_AGENT_EXECUTION_INTERVAL_SECONDS` | Scheduler tick interval (default 60) |
+| `DATABASE_URL` | Postgres connection string |
+| `REDIS_URL` | Redis connection string (Sidekiq + ActionCable) |
+| `SECRET_KEY_BASE` | Rails secret key |
+| `GIT_SHA` | Deployed commit SHA (logged in audit trail) |
+
+### Per-agent toggles (env default, DB override via `agent_configs`)
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `CELLGUARD_BUDGET_GUARD_ENABLED` | `true` | Enable `budget_guard` |
+| `CELLGUARD_CHAOS_ORCHESTRATOR_ENABLED` | `false` | Enable `chaos_orchestrator` (safety) |
+| `CELLGUARD_INCIDENT_RESPONSE_ENABLED` | `true` | Enable `incident_response` |
+| `CELLGUARD_HEALING_AGENT_ENABLED` | `true` | Enable `healing` |
+
+Precedence: persisted `agent_configs` row → environment variable → DEFAULTS.
 
 ## API contract
-Status and activity:
-- `GET /api/agents/status`
-- `GET /api/agents/activity?limit=20`
 
-Control:
-- `POST /api/agents/run-all`
-- `POST /api/agents/:name/run`
-- `POST /api/agents/:name/toggle`
+### Public (no token required)
 
-`POST /api/agents/run-all` behavior:
-- default returns async fanout (`mode: "async"`) unless `async=false`
-- sync mode still supported for controlled execution paths
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/healthz` | Liveness probe |
+| `GET /api/readyz` | Readiness probe (DB + Redis + Sidekiq + classifier) |
+| `GET /api/status` | Detailed status with version and component state |
+| `GET /api/release-gate/check` | CI gate check (200 open / 423 locked) |
+| `GET /api/agents/status` | Agent enablement and recent execution counts |
+| `GET /api/agents/activity?limit=20` | Recent agent execution feed |
+
+### Privileged (require `X-CELLGUARD-TOKEN` in production)
+
+| Endpoint | Purpose |
+|----------|---------|
+| `POST /api/release-gate/override` | Audited manual override |
+| `POST /api/evaluate` | Trigger budget evaluation + classification |
+| `POST /api/ingest/job-stat` | Ingest operational metrics |
+| `POST /api/inject-failures` | Demo: simulate failures (demo mode only) |
+| `POST /api/chaos/partition` | Inject network partition (demo mode only) |
+| `POST /api/chaos/heal` | Recover from chaos (demo mode only) |
+| `GET /api/audit-logs` | Read audit trail |
+| `POST /api/incidents/:id/acknowledge` | Acknowledge incident |
+| `POST /api/incidents/:id/resolve` | Resolve incident |
+| `POST /api/incidents/:id/escalate` | Escalate incident |
+| `POST /api/incidents/:id/note` | Add note to incident |
+| `POST /api/agents/run-all` | Run all enabled agents (async by default) |
+| `POST /api/agents/:name/run` | Run a specific agent |
+| `POST /api/agents/:name/toggle` | Enable/disable an agent |
 
 ## WebSocket contract
-Channel:
-- `AgentActivityChannel`
 
-Expected event families:
-- `initial_state`
-- `agent_triggered`
-- `agent_error`
-- `status_update`
-- activity stream events with agent/shard/status/action/timestamps
+Channel: `AgentActivityChannel`
+
+Event families:
+- `initial_state` — sent on subscribe
+- `agent_triggered` — an agent run started
+- `agent_error` — an agent run failed
+- `status_update` — agent status or activity feed changed
+- Activity stream events with `agent`, `shard`, `status`, `action`, `created_at`
 
 ## Data contract
-Tables:
-- `agent_executions`: runtime history and outcomes
-- `agent_configs`: mutable runtime overrides
 
-Agent execution record should include:
-- `agent_name`
-- shard reference
-- status (`completed`, `failed`, etc.)
-- action/description/context
-- timing metadata (`duration_ms`, timestamps)
+### Tables
 
-## Operational run patterns
-Manual single-agent run:
+- `agent_executions` — runtime history and outcomes per agent
+- `agent_configs` — mutable runtime overrides for agent toggles
+- `audit_logs` — immutable audit trail of privileged operations
+- `incidents` — classifier-driven incident records
+- `error_budgets` — per-shard SLO budget state
+- `job_stats` — ingested operational metrics
+- `shards` — logical deploy units
+
+### Agent execution record fields
+
+`agent_name`, `shard_id`, `incident_id`, `status` (running / completed / failed), `action_taken`, `action_details`, `result`, `error_message`, `started_at`, `completed_at`, `created_at`, `updated_at`. Helper `duration_ms` returns elapsed milliseconds.
+
+## Commands
+
+### Local development
 
 ```bash
+# Start the full local stack (Rails + Sidekiq + scheduler)
+ALLOW_DEMO_ENDPOINTS=true CLASSIFIER_STUB=true bin/run-all
+
+# Or three-terminal mode
+bin/dev                                    # Rails web
+bundle exec sidekiq -C config/sidekiq.yml  # Sidekiq worker
+make go-classifier-run                     # Go classifier on :8081
+make go-agent-runner-run                   # Go agent runner
+```
+
+### Testing
+
+```bash
+bundle exec rails test          # Rails test suite
+make go-classifier-test         # Go classifier tests
+make go-agent-runner-test       # Go agent-runner tests
+```
+
+### Game day (deterministic gate proof)
+
+```bash
+make gameday
+# 1. Gate starts open (200)
+# 2. Partition Redis (20s)
+# 3. Inject failures (deterministic signal)
+# 4. Evaluate + classify
+# 5. Gate locks (423)
+# 6. Heal
+```
+
+### UI evidence
+
+```bash
+make go-ui-smoke
+# Renders the dashboard and saves tmp/ui-dashboard.png
+```
+
+### Reset demo state
+
+```bash
+make reset-demo
+make enable-chaos-orchestrator   # optional
+```
+
+### Manual agent run
+
+```bash
+# Single agent
 curl -X POST http://localhost:3000/api/agents/budget_guard/run \
   -H "Content-Type: application/json" \
+  -H "X-CELLGUARD-TOKEN: $CELLGUARD_TOKEN" \
   -d '{"shard":"shard-default"}'
-```
 
-Async fanout run:
-
-```bash
+# Async fanout
 curl -X POST http://localhost:3000/api/agents/run-all \
   -H "Content-Type: application/json" \
+  -H "X-CELLGUARD-TOKEN: $CELLGUARD_TOKEN" \
   -d '{"async":true}'
-```
 
-Toggle agent:
-
-```bash
+# Toggle
 curl -X POST http://localhost:3000/api/agents/chaos_orchestrator/toggle \
   -H "Content-Type: application/json" \
+  -H "X-CELLGUARD-TOKEN: $CELLGUARD_TOKEN" \
   -d '{"enabled":false}'
 ```
 
+## Files to know
+
+| Path | Why |
+|------|-----|
+| `app/services/agent_scheduler.rb` | Fanout controller for all agents |
+| `app/agents/*_agent.rb` | The four canonical agents |
+| `app/services/budget_evaluator.rb` | Core gate logic |
+| `app/services/chaos_service.rb` | Fault injection primitives |
+| `app/services/classifier_client.rb` | Ruby client for the Go classifier |
+| `app/controllers/api/*_controller.rb` | API surface (all under `Api::TokenGuard` for mutations) |
+| `app/controllers/concerns/api.rb` | `TokenGuard`, `StructuredErrors`, `RequestAudit` |
+| `app/services/sre_scorecard_service.rb` | SRE metrics for the dashboard |
+| `app/jobs/agent_run_job.rb` | Sidekiq job that runs one agent on one shard |
+| `app/channels/agent_activity_channel.rb` | WebSocket activity feed |
+| `db/schema.rb` | Source of truth for the data model |
+| `config/sidekiq.yml` | Sidekiq + scheduler config |
+| `go/classifier/` | Go classifier service |
+| `go/agent-runner/` | Go agent runner (calls Rails HTTP APIs) |
+
+## Files to avoid
+
+- `tmp/` — runtime artifacts, never edit
+- `log/` — runtime logs, never edit
+- `storage/` — Active Storage (unused by default)
+- `vendor/bundle/` — bundled gems
+- `node_modules/` — JS deps
+- `screenshots/` — generated evidence
+
+## Done-when checklist
+
+A change is "done" when all of these are true:
+
+1. `bundle exec rails test` passes (0 failures, 0 errors)
+2. `make go-classifier-test` passes
+3. `make go-agent-runner-test` passes
+4. `make gameday` transitions the gate from `200` to `423 Locked` and back
+5. `make go-ui-smoke` renders the dashboard without errors
+6. No raw exception messages leak from API endpoints (production mode)
+7. Any new mutation endpoint is covered by `Api::TokenGuard`
+8. Any new mutation endpoint writes to `audit_logs` via `Api::RequestAudit`
+9. No new gem added without justification in the PR description
+10. No new env var added without documenting it in `README.md` and `docs/DEPLOYMENT.md`
+11. No new endpoint added without updating the API contract table above
+12. No schema change without a migration
+
 ## Consolidated implementation priorities
-The earlier strategy notes are consolidated into this order:
+
 1. Keep gate-proof deterministic in CI
 2. Keep Sidekiq scheduler and async fanout reliable
-3. Add metrics and deployment proof next
-4. Add advanced AI-copilot layers only after core safety/reproducibility stays green
+3. Keep the production safety model intact (token guards, audit trail, chaos opt-in)
+4. Keep the operator journey complete and never-empty
+5. Add metrics and deployment proof
+6. Add advanced AI-copilot layers only after core safety/reproducibility stays green

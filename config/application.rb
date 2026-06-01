@@ -22,6 +22,8 @@ module Cellguard
     config.eager_load_paths.delete(agents_path)
     config.autoload_paths << app_root_path
     config.eager_load_paths << app_root_path
+    config.autoload_paths << Rails.root.join("lib").to_s
+    config.eager_load_paths << Rails.root.join("lib").to_s
     config.generators.system_tests = nil
   end
 end

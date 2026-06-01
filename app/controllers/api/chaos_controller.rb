@@ -4,9 +4,14 @@ require "shellwords"
 
 module Api
   class ChaosController < ApplicationController
+    include ::Api::StructuredErrors
+    include ::Api::RequestAudit
+    include ::Api::TokenGuard
+
     protect_from_forgery with: :null_session
 
     def partition
+      require_admin_token!
       guard_demo!
 
       mode = params.fetch(:mode, "docker")
@@ -27,22 +32,31 @@ module Api
         return render json: { error: "unknown_mode" }, status: :bad_request
       end
 
+      audit_request!(
+        action: "chaos_partition",
+        shard: Shard.find_by(name: "shard-default"),
+        justification: "Chaos partition: mode=#{mode} seconds=#{seconds}",
+        metadata: { mode: mode, seconds: seconds, result_status: result[:status].to_s }
+      )
+
       if result[:status] == :failed
         render json: { error: "chaos_failed", details: result }, status: :unprocessable_entity
       else
         render json: result
       end
-    rescue StandardError => e
-      render json: { error: "chaos_failed", message: e.message }, status: :unprocessable_entity
     end
 
     def heal
+      require_admin_token!
       guard_demo!
 
       result = ChaosService.new(nil).heal
+      audit_request!(
+        action: "chaos_heal",
+        shard: Shard.find_by(name: "shard-default"),
+        justification: "Chaos heal triggered"
+      )
       render json: { status: "heal_attempted", result: result }
-    rescue StandardError => e
-      render json: { error: "chaos_failed", message: e.message }, status: :unprocessable_entity
     end
 
     private

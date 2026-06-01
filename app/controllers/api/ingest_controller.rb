@@ -2,6 +2,9 @@
 
 module Api
   class IngestController < ApplicationController
+    include ::Api::StructuredErrors
+    include ::Api::TokenGuard
+
     protect_from_forgery with: :null_session
 
     def job_stat
