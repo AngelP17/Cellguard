@@ -5,6 +5,17 @@
 ) do %>
 
   <div class="space-y-4" data-gsap="dashboard">
+    <%# Degraded dependency banner %>
+    <% if @dependency_health && @dependency_health.values.any? { |v| v == :down } %>
+      <%= render Ui::StateAlertComponent.new(
+        level: :warning,
+        title: "Some dependencies are unavailable",
+        message: "Dashboard data may be stale. Affected: #{@dependency_health.select { |_, v| v == :down }.keys.join(', ')}. Recent activity continues from cached values.",
+        action_label: "View Status",
+        action_href: "/api/status"
+      ) %>
+    <% end %>
+
     <%# A. Sticky Command Bar %>
     <%= render Ui::CommandBarComponent.new(
       shard: @shard.name,
@@ -36,26 +47,39 @@
 
     <%# Row 1: SRE Scorecards %>
     <div class="grid gap-3 md:grid-cols-3" data-gsap="scorecards">
-      <article class="cg-scorecard">
-        <div class="cg-scorecard__label">Chaos Drill Success (30d)</div>
-        <div class="cg-scorecard__value"><%= @sre_scorecards.dig(:chaos, :success_rate_label) %></div>
+      <article class="cg-scorecard" aria-labelledby="chaos-scorecard-label">
+        <div class="cg-scorecard__label" id="chaos-scorecard-label">Chaos Drill Success (30d)</div>
+        <div class="cg-scorecard__value">
+          <% if @sre_scorecards.dig(:chaos, :success_rate).nil? %>
+            <span class="text-base font-normal" style="color: var(--cg-muted);">No drills yet</span>
+          <% else %>
+            <%= @sre_scorecards.dig(:chaos, :success_rate_label) %>
+          <% end %>
+        </div>
         <div class="cg-scorecard__meta">
           <%= @sre_scorecards.dig(:chaos, :successful) %> /
           <%= @sre_scorecards.dig(:chaos, :executed) %> executed
-          • <%= @sre_scorecards.dig(:chaos, :skipped) %> skipped
+          <span class="mx-1" style="color: var(--cg-muted-dim);">·</span>
+          <%= @sre_scorecards.dig(:chaos, :skipped) %> skipped
         </div>
       </article>
 
-      <article class="cg-scorecard">
-        <div class="cg-scorecard__label">MTTR (30d)</div>
-        <div class="cg-scorecard__value"><%= @sre_scorecards.dig(:mttr, :label) %></div>
+      <article class="cg-scorecard" aria-labelledby="mttr-scorecard-label">
+        <div class="cg-scorecard__label" id="mttr-scorecard-label">MTTR (30d)</div>
+        <div class="cg-scorecard__value">
+          <% if @sre_scorecards.dig(:mttr, :minutes).nil? %>
+            <span class="text-base font-normal" style="color: var(--cg-muted);">No resolutions</span>
+          <% else %>
+            <%= @sre_scorecards.dig(:mttr, :label) %>
+          <% end %>
+        </div>
         <div class="cg-scorecard__meta">
           <%= @sre_scorecards.dig(:mttr, :resolved_count) %> resolved
         </div>
       </article>
 
-      <article class="cg-scorecard">
-        <div class="cg-scorecard__label">Gate Locks (7d)</div>
+      <article class="cg-scorecard" aria-labelledby="locks-scorecard-label">
+        <div class="cg-scorecard__label" id="locks-scorecard-label">Gate Locks (7d)</div>
         <div class="cg-scorecard__value"><%= @sre_scorecards.dig(:gate_locks, :recent_total) %></div>
         <div class="cg-scorecard__meta"><%= @sre_scorecards.dig(:gate_locks, :trend_label) %></div>
         <div class="cg-scorecard__sparkline"><%= @sre_scorecards.dig(:gate_locks, :sparkline) %></div>

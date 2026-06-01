@@ -117,4 +117,63 @@ module Api
       }
     end
   end
+
+  module Idempotent
+    extend ActiveSupport::Concern
+
+    IDEMPOTENCY_HEADER = "X-Idempotency-Key".freeze
+    IDEMPOTENCY_REPLAY_HEADER = "X-Idempotent-Replay".freeze
+    IDEMPOTENCY_FORMAT = /\A[A-Za-z0-9_\-]{8,128}\z/.freeze
+
+    private
+
+    def with_idempotency
+      key = request.headers[IDEMPOTENCY_HEADER]
+      return yield if key.blank?
+      return yield unless key.match?(IDEMPOTENCY_FORMAT)
+
+      fingerprint = request_fingerprint
+      cached = IdempotencyStore.fetch("#{key}:#{fingerprint}")
+      if cached
+        response.headers[IDEMPOTENCY_REPLAY_HEADER] = "true"
+        render json: cached[:body], status: cached[:status]
+        return
+      end
+
+      conflict = IdempotencyStore.key_used?(key)
+      if conflict
+        render json: { error: "idempotency_conflict", message: "X-Idempotency-Key reused with different body." }, status: :conflict
+        return
+      end
+
+      yield
+
+      cache_response_if_cacheable(key, fingerprint)
+    end
+
+    def cache_response_if_cacheable(key, fingerprint)
+      return if response.status >= 500
+      return unless response.successful? || response.status == 422 || response.status == 423
+
+      body = response.body
+      return if body.blank?
+
+      parsed = begin
+        JSON.parse(body)
+      rescue JSON::ParserError
+        nil
+      end
+      return if parsed.nil?
+
+      IdempotencyStore.save(
+        "#{key}:#{fingerprint}",
+        status: response.status,
+        body: parsed
+      )
+    end
+
+    def request_fingerprint
+      Digest::SHA256.hexdigest("#{request.method}:#{request.path}:#{request.raw_post}")
+    end
+  end
 end

@@ -19,7 +19,7 @@
           </div>
           <div>
             <div style="font-size: 0.55rem; color: var(--cg-muted-dim); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;">Shard</div>
-            <div class="font-mono text-sm" style="color: var(--cg-text);"><%= @incident.shard&.name || "—" %></div>
+            <div class="font-mono text-sm" style="color: var(--cg-text);"><%= @incident.shard&.name || "n/a" %></div>
           </div>
           <div>
             <div style="font-size: 0.55rem; color: var(--cg-muted-dim); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;">Service</div>
@@ -183,11 +183,11 @@
               </div>
               <div class="flex justify-between">
                 <span style="color: var(--cg-muted-dim);">Service</span>
-                <span><%= @incident&.service_label || "—" %></span>
+                <span><%= @incident&.service_label || "n/a" %></span>
               </div>
               <div class="flex justify-between">
                 <span style="color: var(--cg-muted-dim);">Team</span>
-                <span><%= @incident&.team_label || "—" %></span>
+                <span><%= @incident&.team_label || "n/a" %></span>
               </div>
             </div>
           </div>
@@ -257,14 +257,14 @@
               <div class="w-1.5 h-1.5 rounded-full mt-1" style="background: var(--cg-ok);"></div>
               <div>
                 <div class="text-xs" style="color: var(--cg-text);">Runbook opened from incident context</div>
-                <div class="text-xs font-mono" style="color: var(--cg-muted-dim);">incident_response_agent — <%= time_ago_in_words(10.minutes.ago) %> ago</div>
+                <div class="text-xs font-mono" style="color: var(--cg-muted-dim);">incident_response_agent · <%= time_ago_in_words(10.minutes.ago) %> ago</div>
               </div>
             </div>
             <div class="flex items-start gap-2">
               <div class="w-1.5 h-1.5 rounded-full mt-1" style="background: var(--cg-info);"></div>
               <div>
                 <div class="text-xs" style="color: var(--cg-text);">Step 3 marked in progress</div>
-                <div class="text-xs font-mono" style="color: var(--cg-muted-dim);">operator@cellguard.io — <%= time_ago_in_words(5.minutes.ago) %> ago</div>
+                <div class="text-xs font-mono" style="color: var(--cg-muted-dim);">operator@cellguard.io · <%= time_ago_in_words(5.minutes.ago) %> ago</div>
               </div>
             </div>
           </div>

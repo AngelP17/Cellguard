@@ -9,6 +9,10 @@ require "action_view/railtie"
 require "action_cable/engine"
 require "rails/test_unit/railtie"
 
+# Load middleware before the app class is defined
+require_relative "../app/middleware/request_id_middleware"
+require_relative "../app/middleware/rate_limit_middleware"
+
 Bundler.require(*Rails.groups)
 
 module Cellguard
@@ -24,6 +28,8 @@ module Cellguard
     config.eager_load_paths << app_root_path
     config.autoload_paths << Rails.root.join("lib").to_s
     config.eager_load_paths << Rails.root.join("lib").to_s
+    config.middleware.insert_before Rails::Rack::Logger, RequestIdMiddleware
+    config.middleware.insert_after RequestIdMiddleware, RateLimitMiddleware
     config.generators.system_tests = nil
   end
 end

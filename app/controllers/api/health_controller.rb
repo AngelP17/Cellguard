@@ -45,6 +45,20 @@ module Api
       }
     end
 
+    def metrics
+      snapshot = MetricsRegistry.snapshot
+      render json: {
+        timestamp: Time.current.iso8601,
+        process: {
+          pid: Process.pid,
+          uptime_seconds: (Time.current - Process.clock_gettime(Process::CLOCK_MONOTONIC)).to_i.abs
+        },
+        counters: snapshot[:counters],
+        gauges: snapshot[:gauges],
+        timings: snapshot[:timings]
+      }
+    end
+
     private
 
     def database_check

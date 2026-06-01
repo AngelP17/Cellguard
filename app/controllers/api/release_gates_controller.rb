@@ -5,6 +5,7 @@ module Api
     include ::Api::StructuredErrors
     include ::Api::RequestAudit
     include ::Api::TokenGuard
+    include ::Api::Idempotent
 
     protect_from_forgery with: :null_session
 
@@ -35,23 +36,25 @@ module Api
     end
 
     def override
-      require_admin_token!
+      with_idempotency do
+        require_admin_token!
 
-      shard = Shard.find_by!(name: params.fetch(:shard))
-      actor = params.fetch(:actor).to_s.strip
-      justification = params.fetch(:justification).to_s.strip
+        shard = Shard.find_by!(name: params.fetch(:shard))
+        actor = params.fetch(:actor).to_s.strip
+        justification = params.fetch(:justification).to_s.strip
 
-      raise ActionController::BadRequest, "actor required" if actor.empty?
-      raise ActionController::BadRequest, "justification required" if justification.empty?
+        raise ActionController::BadRequest, "actor required" if actor.empty?
+        raise ActionController::BadRequest, "justification required" if justification.empty?
 
-      audit_request!(
-        action: "override_gate",
-        shard: shard,
-        justification: justification,
-        metadata: { actor: actor }
-      )
+        audit_request!(
+          action: "override_gate",
+          shard: shard,
+          justification: justification,
+          metadata: { actor: actor }
+        )
 
-      render json: { status: "override_recorded", shard: shard.name }
+        render json: { status: "override_recorded", shard: shard.name }
+      end
     end
   end
 end

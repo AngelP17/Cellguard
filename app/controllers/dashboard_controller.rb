@@ -33,6 +33,9 @@ class DashboardController < ApplicationController
     snapshot = SreScorecardService.new(shard: @shard).snapshot
     @sre_scorecards = snapshot[:scorecards]
     @chaos_insight = snapshot[:chaos_insight]
+
+    # Dependency health for degraded state banner
+    @dependency_health = check_dependency_health
   end
 
   private
@@ -48,5 +51,39 @@ class DashboardController < ApplicationController
     rescue StandardError => e
       Rails.logger.error "[Dashboard] Agent execution failed: #{e.message}"
     end
+  end
+
+  def check_dependency_health
+    health = { redis: :unknown, classifier: :unknown, sidekiq: :unknown }
+    Rails.cache.fetch("cellguard:dashboard:health", expires_in: 10.seconds) do
+      health[:redis] = redis_up? ? :ok : :down
+      health[:classifier] = classifier_up? ? :ok : :down
+      health[:sidekiq] = sidekiq_up? ? :ok : :down
+      health
+    end
+  end
+
+  def redis_up?
+    return false unless defined?(Redis)
+    Redis.new(url: ENV.fetch("REDIS_URL", "redis://localhost:6379/0"), timeout: 1).ping == "PONG"
+  rescue StandardError
+    false
+  end
+
+  def classifier_up?
+    require "net/http"
+    require "uri"
+    url = URI.parse(ENV.fetch("CLASSIFIER_URL", "http://localhost:8081") + "/healthz")
+    Net::HTTP.start(url.host, url.port, open_timeout: 1, read_timeout: 1) { |http| http.get(url.path) }.is_a?(Net::HTTPSuccess)
+  rescue StandardError
+    false
+  end
+
+  def sidekiq_up?
+    return true unless defined?(Sidekiq)
+    require "sidekiq/api"
+    Sidekiq::ProcessSet.new.size.positive?
+  rescue StandardError
+    false
   end
 end

@@ -27,11 +27,11 @@
       <div class="grid gap-2 md:grid-cols-2">
         <div class="cg-evidence" style="padding: 0.5rem 0.6rem;">
           <div class="cg-evidence__label">Classifier</div>
-          <div class="text-xs mt-0.5" style="color: var(--cg-text);"><%= @classifier["reason"].presence || "—" %></div>
+          <div class="text-xs mt-0.5" style="color: var(--cg-text);"><%= @classifier["reason"].presence || "n/a" %></div>
         </div>
         <div class="cg-evidence" style="padding: 0.5rem 0.6rem;">
           <div class="cg-evidence__label">Likely Cause</div>
-          <div class="text-xs mt-0.5" style="color: var(--cg-text);"><%= @likely_cause.presence || "—" %></div>
+          <div class="text-xs mt-0.5" style="color: var(--cg-text);"><%= @likely_cause.presence || "n/a" %></div>
         </div>
       </div>
 

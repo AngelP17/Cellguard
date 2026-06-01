@@ -1,0 +1,14 @@
+<div class="<%= classes %>" role="<%= @level == :error ? 'alert' : 'status' %>">
+  <div class="cg-state-alert__icon" aria-hidden="true">
+    <%= heroicon(icon, classes: "w-4 h-4") %>
+  </div>
+  <div class="flex-1 min-w-0">
+    <div class="cg-state-alert__title"><%= @title %></div>
+    <% if @message.present? %>
+      <div class="cg-state-alert__message"><%= @message %></div>
+    <% end %>
+  </div>
+  <% if @action_label.present? && @action_href.present? %>
+    <a href="<%= @action_href %>" class="cg-btn cg-btn--sm cg-btn--secondary"><%= @action_label %></a>
+  <% end %>
+</div>

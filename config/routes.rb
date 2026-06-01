@@ -7,6 +7,7 @@ Rails.application.routes.draw do
     get "healthz", to: "health#healthz"
     get "readyz",  to: "health#readyz"
     get "status",  to: "health#status"
+    get "metrics", to: "health#metrics"
 
     # Policy wedge
     get  "release-gate/check",    to: "release_gates#check"

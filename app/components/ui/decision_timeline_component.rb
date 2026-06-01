@@ -6,8 +6,8 @@ module Ui
       { label: "Burn rate exceeded", status: :danger, code: "ALERT", time: "2m ago" },
       { label: "Gate locked", status: :danger, code: "423", time: "2m ago" },
       { label: "Incident created", status: :complete, code: "201", time: "1m ago" },
-      { label: "Runbook suggested", status: :active, code: "—", time: "now" },
-      { label: "Audit recorded", status: :pending, code: "—", time: "—" }
+      { label: "Runbook suggested", status: :active, code: "n/a", time: "now" },
+      { label: "Audit recorded", status: :pending, code: "n/a", time: "pending" }
     ].freeze
   end
 end
