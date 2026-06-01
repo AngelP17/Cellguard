@@ -70,10 +70,23 @@ Open the dashboard at <http://localhost:3000/dashboard>.
 ## Screenshots
 
 ### Dashboard — Mission Control
-![Dashboard](./screenshots/dashboard.png)
+
+Open gate (SLO compliant, deployments permitted):
+
+![Dashboard — open](./screenshots/dashboard-open.png)
+
+Locked gate (error budget exhausted, override required):
+
+![Dashboard — locked](./screenshots/dashboard-locked.png)
 
 ### Incidents — Triage Workspace
-![Incidents](./screenshots/incidents.png)
+![Incidents](./screenshots/incidents-desktop.png)
+
+Mobile (375×812):
+
+| Dashboard | Incidents |
+|-----------|-----------|
+| ![Mobile dashboard](./screenshots/dashboard-mobile.png) | ![Mobile incidents](./screenshots/incidents-mobile.png) |
 
 ---
 

@@ -1114,7 +1114,8 @@ a:hover { text-decoration: none; }
   .cg-shell-header { flex-direction: column; align-items: flex-start; }
   .cg-command-bar { gap: 0.5rem; }
   .cg-command-bar__group { border-right: none; border-bottom: 1px solid var(--cg-border); padding: 0.25rem 0; width: 100%; }
-  .cg-command-bar__actions { margin-left: 0; padding-left: 0; width: 100%; }
+  .cg-command-bar__actions { margin-left: 0; padding-left: 0; width: 100%; flex-wrap: wrap; }
+  .cg-command-bar__actions .cg-btn { flex: 1 1 auto; min-width: 0; }
   .cg-timeline-h { gap: 0.5rem; }
   .cg-timeline-h__node::after { display: none; }
   .cg-demo { flex-direction: column; }

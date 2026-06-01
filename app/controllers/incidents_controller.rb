@@ -6,7 +6,7 @@ class IncidentsController < ApplicationController
     @incidents = Incident.order(created_at: :desc).limit(50)
 
     # Calculate real MTTA and MTTR from incident data
-    recent_incidents = Incident.where(created_at: 30.days.ago..Time.current)
+    recent_incidents = Incident.where(created_at: 60.days.ago..Time.current)
     resolved = recent_incidents.where(status: "resolved")
 
     # MTTR: mean time from created to updated (resolution)
@@ -19,7 +19,7 @@ class IncidentsController < ApplicationController
       avg = (mttr_durations.sum / mttr_durations.size).round(1)
       "#{avg} min"
     else
-      "N/A"
+      "No resolutions"
     end
 
     # MTTA: mean time from created to acknowledged (approximate using updated_at for now)
@@ -33,7 +33,7 @@ class IncidentsController < ApplicationController
       avg = (mtta_durations.sum / mtta_durations.size).round(1)
       "#{avg} min"
     else
-      "N/A"
+      "No acks yet"
     end
   end
 end

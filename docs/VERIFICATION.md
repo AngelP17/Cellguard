@@ -111,7 +111,20 @@ make go-ui-smoke
 
 ## 6. Browser screenshots (desktop + mobile)
 
-Manual verification of responsive layouts.
+Manual verification of responsive layouts. Reference artifacts (latest run):
+
+- `screenshots/dashboard-open.png` (gate open, SLO compliant)
+- `screenshots/dashboard-locked.png` (gate locked, error budget exhausted)
+- `screenshots/dashboard-desktop.png` and `screenshots/dashboard-mobile.png` (responsive proof)
+- `screenshots/incidents-desktop.png` and `screenshots/incidents-mobile.png`
+
+To regenerate after UI changes:
+
+```bash
+node scripts/screenshot.js
+```
+
+(The `dashboard-locked.png` requires the gate to actually be locked; force it via `make gameday` step 5, then `node scripts/screenshot-locked.js`.)
 
 ### Desktop (1440 x 900)
 
