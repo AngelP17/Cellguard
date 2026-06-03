@@ -71,13 +71,15 @@ Open the dashboard at <http://localhost:3000/dashboard> to see the Operations Fa
 
 ## Screenshots
 
+Screenshots below showcase the **elite, /design-taste-frontend powered UI** (premium control-plane aesthetic, high visual density, consistent hierarchy, and real DB-backed xyOps evidence panels — Operations Fabric, rich Gate context on lock, and detailed Incidents xyOps Evidence).
+
 ### Dashboard — Mission Control
 
-Open gate (SLO compliant, deployments permitted):
+Open gate (SLO compliant, deployments permitted — Operations Fabric panel visible):
 
 ![Dashboard — open](./screenshots/dashboard-open.png)
 
-Locked gate (error budget exhausted, override required):
+Locked gate (error budget exhausted + full xyOps fabric evidence in the premium evidence block — workflow, failed job, server snapshot, alert, metrics):
 
 ![Dashboard — locked](./screenshots/dashboard-locked.png)
 
