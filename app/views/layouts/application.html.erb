@@ -11,18 +11,39 @@
     <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
-    <% if controller_name == "docs" %>
-      <script type="module">
-        import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+    <script type="module">
+      // Proper Mermaid.js integration (replaces legacy ASCII graphs/diagrams across docs + runbooks)
+      // Loaded globally so any .mermaid content (e.g. in future pages or dynamic) renders with premium dark theme.
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
 
+      const initMermaid = () => {
         mermaid.initialize({
-          startOnLoad: true,
+          startOnLoad: false, // we control it
           theme: "dark",
           securityLevel: "strict",
-          fontFamily: "Geist, sans-serif"
+          fontFamily: "Geist, sans-serif",
+          flowchart: { curve: "basis" },
+          sequence: { mirrorActors: false }
         });
-      </script>
-    <% end %>
+        // Render any mermaid blocks (works for initial + after Turbo morphs)
+        const containers = document.querySelectorAll(".mermaid:not([data-mermaid-processed])");
+        if (containers.length) {
+          mermaid.run({ nodes: containers }).then(() => {
+            containers.forEach(el => el.setAttribute("data-mermaid-processed", "true"));
+          }).catch(() => {});
+        }
+      };
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initMermaid);
+      } else {
+        initMermaid();
+      }
+
+      // Re-init after Turbo navigation (Hotwire) so docs/runbooks still render diagrams
+      document.addEventListener("turbo:load", initMermaid);
+      document.addEventListener("turbo:render", initMermaid);
+    </script>
   </head>
 
   <body>

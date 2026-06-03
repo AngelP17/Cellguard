@@ -96,28 +96,33 @@ Mobile (375×812):
 
 ## Architecture (CellGuard governs xyOps)
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                     CellGuard UI (Hotwire)                   │
-│  Dashboard • Release Gate (with xyops evidence) • Agents     │
-│  Incidents (xyops panel) • Audit (cross-system)              │
-└──────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌──────────────────────────────────────────────────────────────┐
-│                 CellGuard Control Plane                      │
-│  • SLO & Error Budget Engine (now workflow-aware)            │
-│  • Gate Engine (xyops signals accelerate burn/lock)          │
-│  • Agent Engine (healing triggers xyops remediation safely)  │
-│  • xyOps Adapter (client, ingestor, remediation_runner)      │
-└──────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌──────────────────────────────────────────────────────────────┐
-│                   xyOps Execution Fabric                     │
-│  Jobs • Workflows • Monitoring • Alerts • Snapshots          │
-│  (simulated in demo via Xyops::Simulator; real in prod)      │
-└──────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph UI["CellGuard UI (Hotwire)"]
+        direction TB
+        D["Dashboard • Release Gate (with xyops evidence) • Agents"]
+        I["Incidents (xyops panel) • Audit (cross-system)"]
+    end
+
+    subgraph CP["CellGuard Control Plane"]
+        direction TB
+        SLO["SLO & Error Budget Engine (workflow-aware)"]
+        GE["Gate Engine (xyops signals accelerate burn/lock)"]
+        AE["Agent Engine (healing triggers xyops remediation safely)"]
+        AD["xyOps Adapter (client, ingestor, remediation_runner)"]
+    end
+
+    subgraph XY["xyOps Execution Fabric"]
+        WF["Jobs • Workflows • Monitoring • Alerts • Snapshots"]
+        NOTE["(simulated in demo via Xyops::Simulator; real self-hosted in prod)"]
+    end
+
+    UI --> CP
+    CP --> XY
+
+    style UI fill:#0f172a,stroke:#64748b,color:#e2e8f0
+    style CP fill:#1e2937,stroke:#64748b,color:#e2e8f0
+    style XY fill:#0f172a,stroke:#64748b,color:#e2e8f0
 ```
 
 **Division of responsibility**

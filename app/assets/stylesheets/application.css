@@ -1980,3 +1980,29 @@ a:focus-visible {
 .cg-agent-status--failed { color: var(--cg-danger); }
 .cg-agent-status--running { color: var(--cg-info); }
 .cg-agent-status--unknown { color: var(--cg-muted); }
+
+/* Mermaid diagrams (proper JS-rendered, replaces old ASCII graphs in docs/runbooks/README) */
+.cg-mermaid {
+  background: var(--cg-surface);
+  border: 1px solid var(--cg-border-strong);
+  border-radius: 0.65rem;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  overflow-x: auto;
+  /* Match premium dense control plane aesthetic */
+}
+
+.cg-mermaid .mermaid {
+  /* Mermaid's SVG will use the dark theme from init; ensure it blends */
+  min-height: 120px;
+}
+
+.cg-mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* When rendered inside prose article */
+.prose .cg-mermaid {
+  margin: 1.25rem 0;
+}
