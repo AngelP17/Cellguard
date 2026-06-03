@@ -103,6 +103,7 @@ module Api
           cpu_percent: 92.0,
           mem_pct: 81.0,
           memory_percent: 81.0,
+          redis_latency_ms: 640,
           network_summary: "redis latency elevated",
           network_status: "degraded",
           process_summary: [{ name: "fulfillment-worker", cpu: 67 }],

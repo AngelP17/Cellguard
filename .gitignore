@@ -16,4 +16,5 @@
 # Go binaries
 /go/classifier/classifier
 /go/agent-runner/runner
+/go/ui-smoke/ui-smoke
 *.exe

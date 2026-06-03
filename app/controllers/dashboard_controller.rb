@@ -62,7 +62,13 @@ class DashboardController < ApplicationController
           failed_job: run&.failed_job_name || run&.context&.dig("job"),
           server_snapshot: run&.server_name || run&.server_id || sn&.server_name,
           alert: al&.title,
-          snapshot: sn ? { cpu_percent: (sn.cpu_percent || sn.cpu_pct), memory_percent: (sn.memory_percent || sn.mem_pct), network: (sn.network_summary || "elevated") } : nil
+          snapshot: sn ? {
+            cpu: (sn.cpu_percent || sn.cpu_pct),
+            cpu_pct: (sn.cpu_percent || sn.cpu_pct),
+            memory_percent: (sn.memory_percent || sn.mem_pct),
+            redis_ms: sn.redis_latency_ms,
+            network: (sn.network_summary || sn.network_status || "elevated")
+          }.compact : nil
         }.compact
       end
     rescue
@@ -98,6 +104,8 @@ class DashboardController < ApplicationController
   end
 
   def redis_up?
+    # In demo/stub mode we don't require external Redis for clean UI/screenshots
+    return true if ENV["ALLOW_DEMO_ENDPOINTS"] == "true" || ENV["CLASSIFIER_STUB"] == "true"
     return false unless defined?(Redis)
     Redis.new(url: ENV.fetch("REDIS_URL", "redis://localhost:6379/0"), timeout: 1).ping == "PONG"
   rescue StandardError
@@ -105,6 +113,7 @@ class DashboardController < ApplicationController
   end
 
   def classifier_up?
+    return true if ENV["CLASSIFIER_STUB"] == "true"
     require "net/http"
     require "uri"
     url = URI.parse(ENV.fetch("CLASSIFIER_URL", "http://localhost:8081") + "/healthz")
@@ -114,6 +123,8 @@ class DashboardController < ApplicationController
   end
 
   def sidekiq_up?
+    # In demo/stub mode we don't require Sidekiq process for clean UI/screenshots
+    return true if ENV["ALLOW_DEMO_ENDPOINTS"] == "true" || ENV["CLASSIFIER_STUB"] == "true"
     return true unless defined?(Sidekiq)
     require "sidekiq/api"
     Sidekiq::ProcessSet.new.size.positive?
