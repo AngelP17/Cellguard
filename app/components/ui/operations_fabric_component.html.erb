@@ -1,0 +1,91 @@
+<div class="cg-panel" data-gsap="operations-fabric" style="border-color: color-mix(in srgb, var(--cg-accent) 12%, var(--cg-border));">
+  <div class="cg-panel-header">
+    <div class="flex items-center gap-2">
+      <div class="w-2 h-2 rounded-full <%= @connection ? 'bg-emerald-500' : 'bg-amber-500' %>"></div>
+      <div class="cg-panel-title" style="margin:0;">Operations Fabric</div>
+      <span class="cg-state-badge <%= status_class %>" style="font-size: 10px; padding: 1px 6px; letter-spacing: 0.08em;">
+        <%= status_label %>
+      </span>
+    </div>
+    <div class="text-[10px] font-mono" style="color: var(--cg-muted);">
+      <%= @connection&.name || "local-xyops" %>
+    </div>
+  </div>
+
+  <div class="p-3">
+    <% if !@connection %>
+      <div class="text-xs" style="color: var(--cg-muted);">No execution fabric connected. Running in standalone mode.</div>
+    <% else %>
+      <div class="flex items-center justify-between text-[11px] mb-2" style="color: var(--cg-muted-dim);">
+        <div><%= fabric_summary %></div>
+        <div class="font-mono"><%= @latest_snapshot ? "snapshot #{time_ago_in_words(@latest_snapshot.captured_at)} ago" : "" %></div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <%# Monitored Workflows %>
+        <div>
+          <div class="uppercase tracking-[0.08em] text-[9px] mb-1" style="color: var(--cg-muted-dim); font-weight: 600;">MONITORED WORKFLOWS</div>
+          <div class="space-y-1">
+            <% @workflows.first(4).each do |wf| %>
+              <div class="flex items-center justify-between px-2 py-1 rounded" style="background: rgba(255,255,255,0.02); font-size: 12px;">
+                <div class="truncate" style="color: var(--cg-text-bright);"><%= wf.name || wf.workflow_name %></div>
+                <div class="font-mono text-[10px]" style="color: var(--cg-muted);"><%= wf.category || "prod" %></div>
+              </div>
+            <% end %>
+            <% if @workflows.empty? %>
+              <div class="text-xs" style="color: var(--cg-muted);">No workflows synced yet</div>
+            <% end %>
+          </div>
+        </div>
+
+        <%# Active Alerts + Recent Runs (evidence) %>
+        <div>
+          <div class="uppercase tracking-[0.08em] text-[9px] mb-1" style="color: var(--cg-muted-dim); font-weight: 600;">ACTIVE SIGNALS</div>
+          <div class="space-y-1">
+            <% @alerts.first(3).each do |al| %>
+              <div class="cg-evidence" style="padding: 4px 8px; font-size: 11px;">
+                <div class="flex items-center gap-2">
+                  <span class="cg-severity cg-severity--<%= al.severity %>"><%= al.severity.upcase %></span>
+                  <span class="truncate" style="color: var(--cg-text);"><%= al.title %></span>
+                </div>
+              </div>
+            <% end %>
+
+            <% @recent_runs.first(2).each do |run| %>
+              <div class="flex items-center gap-2 text-[11px] px-1" style="color: var(--cg-text);">
+                <span class="font-mono" style="color: var(--cg-muted);"><%= run.external_id[0..7] %></span>
+                <span class="truncate"><%= run.workflow.name %></span>
+                <span class="ml-auto font-mono" style="color: <%= run.failed? ? 'var(--cg-danger)' : 'var(--cg-ok)' %>;"><%= run.status.upcase %></span>
+              </div>
+            <% end %>
+
+            <% if @alerts.empty? && @recent_runs.empty? %>
+              <div class="text-xs" style="color: var(--cg-muted);">No active signals</div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <%# Latest snapshot + linked context (the "what changed" proof) %>
+      <% if @latest_snapshot %>
+        <div class="mt-3 pt-2 border-t" style="border-color: var(--cg-border);">
+          <div class="uppercase tracking-[0.08em] text-[9px] mb-1" style="color: var(--cg-muted-dim); font-weight: 600;">LATEST SERVER SNAPSHOT</div>
+          <div class="flex items-center gap-3 text-xs font-mono" style="color: var(--cg-text);">
+            <div><%= @latest_snapshot.server_id %></div>
+            <div>CPU <%= @latest_snapshot.cpu_pct %>%</div>
+            <div>MEM <%= @latest_snapshot.mem_pct %>%</div>
+            <div>REDIS <%= @latest_snapshot.redis_latency_ms %>ms</div>
+            <div>Q <%= @latest_snapshot.queue_depth %></div>
+            <div class="ml-auto" style="color: var(--cg-muted);"><%= time_ago_in_words(@latest_snapshot.captured_at) %></div>
+          </div>
+        </div>
+      <% end %>
+
+      <% if @linked_incidents.any? %>
+        <div class="mt-2 text-[10px]" style="color: var(--cg-muted);">
+          Linked to <%= @linked_incidents.size %> incident<%= @linked_incidents.size == 1 ? "" : "s" %> in this shard
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+</div>

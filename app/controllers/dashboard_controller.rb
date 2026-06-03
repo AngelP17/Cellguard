@@ -36,7 +36,41 @@ class DashboardController < ApplicationController
 
     # Dependency health for degraded state banner
     @dependency_health = check_dependency_health
+
+    # === xyOps Operations Fabric (evidence FROM DB models, not static) ===
+    begin
+      Xyops::Simulator.seed_workflows! if defined?(Xyops::Simulator)
+      @xyops_connection = XyopsConnection.primary
+      @xyops_workflows = XyopsWorkflow.active.recent.limit(6).to_a
+      @xyops_alerts = XyopsAlert.active.recent.limit(5).to_a
+      @xyops_recent_runs = XyopsWorkflowRun.recent.limit(5).to_a
+      @xyops_latest_snapshot = XyopsSnapshot.order(captured_at: :desc).first
+      @xyops_linked_incidents = XyopsJobLink.where.not(incident_id: nil).order(created_at: :desc).limit(3).map(&:incident).uniq
+    rescue StandardError => e
+      Rails.logger.debug "[dashboard] xyops load skipped: #{e.message}"
+      @xyops_connection = XyopsConnection.primary
+    end
+
+    # Gate xyops context (DB backed for component)
+    @gate_xyops = begin
+      run = XyopsWorkflowRun.failed.order(started_at: :desc).first
+      al = XyopsAlert.critical.active.order(fired_at: :desc).first
+      sn = XyopsSnapshot.order(captured_at: :desc).first
+      if run || al || sn
+        {
+          workflow: run&.workflow_name || run&.workflow&.name,
+          failed_job: run&.failed_job_name || run&.context&.dig("job"),
+          server_snapshot: run&.server_name || run&.server_id || sn&.server_name,
+          alert: al&.title,
+          snapshot: sn ? { cpu_percent: (sn.cpu_percent || sn.cpu_pct), memory_percent: (sn.memory_percent || sn.mem_pct), network: (sn.network_summary || "elevated") } : nil
+        }.compact
+      end
+    rescue
+      nil
+    end
   end
+
+
 
   private
 

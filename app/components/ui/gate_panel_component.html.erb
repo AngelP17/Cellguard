@@ -44,6 +44,35 @@
         </div>
       </div>
 
+      <% if !@gate_open && @xyops.present? %>
+        <div class="mt-3 pt-3 border-t" style="border-color: color-mix(in srgb, var(--cg-danger) 18%, var(--cg-border));">
+          <div class="flex items-center gap-2 mb-1.5">
+            <%= heroicon("server-stack", classes: "w-3.5 h-3.5", stroke_width: 1.75) %>
+            <div class="uppercase text-[9px] tracking-[0.12em] font-semibold" style="color: var(--cg-muted-dim);">XYOPS FABRIC EVIDENCE — CAUSE OF LOCK</div>
+          </div>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-x-3 gap-y-1 text-xs">
+            <% if @xyops[:workflow] || @xyops["workflow"] %>
+              <div class="flex items-baseline gap-1"><span class="text-[10px]" style="color: var(--cg-muted-dim);">workflow</span> <span class="font-medium truncate" style="color: var(--cg-text-bright);"><%= @xyops[:workflow] || @xyops["workflow"] %></span></div>
+            <% end %>
+            <% if @xyops[:failed_job] || @xyops["failed_job"] %>
+              <div class="flex items-baseline gap-1"><span class="text-[10px]" style="color: var(--cg-muted-dim);">job</span> <span class="font-medium truncate" style="color: var(--cg-text-bright);"><%= @xyops[:failed_job] || @xyops["failed_job"] %></span></div>
+            <% end %>
+            <% if @xyops[:server_snapshot] || @xyops["server_snapshot"] %>
+              <div class="flex items-baseline gap-1"><span class="text-[10px]" style="color: var(--cg-muted-dim);">server</span> <span class="font-mono" style="color: var(--cg-text-bright);"><%= @xyops[:server_snapshot] || @xyops["server_snapshot"] %></span></div>
+            <% end %>
+            <% if @xyops[:alert] || @xyops["alert"] %>
+              <div class="col-span-2 md:col-span-1 flex items-baseline gap-1"><span class="text-[10px]" style="color: var(--cg-muted-dim);">alert</span> <span class="truncate" style="color: var(--cg-text);"><%= @xyops[:alert] || @xyops["alert"] %></span></div>
+            <% end %>
+          </div>
+          <% snap = @xyops[:snapshot] || @xyops["snapshot"] %>
+          <% if snap %>
+            <div class="mt-1.5 inline-flex items-center gap-2 text-[10px] font-mono px-2 py-0.5 rounded" style="background: rgba(0,0,0,0.2); color: var(--cg-muted);">
+              snapshot @ <%= (snap[:captured_at] || snap["captured_at"] || Time.current).to_s[11,8] %> · cpu <%= snap[:cpu] || snap["cpu"] || snap[:cpu_pct] || snap["cpu_pct"] %>% · redis <%= snap[:redis_ms] || snap["redis_ms"] || snap[:redis_latency_ms] || snap["redis_latency_ms"] %>ms
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+
       <div class="flex items-start gap-4 flex-wrap mt-1">
         <div>
           <div class="text-xs font-semibold uppercase tracking-wider" style="color: var(--cg-muted-dim);">Recommended Action</div>

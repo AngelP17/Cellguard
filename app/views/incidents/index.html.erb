@@ -86,6 +86,48 @@
             </div>
           </div>
 
+          <%# xyOps Evidence (premium cross-system proof) %>
+          <% if @xyops_evidence.present? %>
+            <div class="cg-panel" style="border-color: color-mix(in srgb, var(--cg-accent) 14%, var(--cg-border));">
+              <div class="cg-panel-header">
+                <div class="flex items-center gap-2">
+                  <%= heroicon("circle-stack", classes: "w-3.5 h-3.5 opacity-70", stroke_width: 1.75) %>
+                  <div class="cg-panel-title">xyOps Evidence</div>
+                </div>
+                <div class="text-[10px] font-mono" style="color: var(--cg-muted-dim);">fabric</div>
+              </div>
+              <div class="p-3 text-xs space-y-1.5" style="color: var(--cg-text);">
+                <% if @xyops_evidence[:workflow] %>
+                  <div class="flex justify-between items-baseline"><span class="text-[10px]" style="color: var(--cg-muted-dim);">triggering workflow</span> <span class="font-medium"><%= @xyops_evidence[:workflow] %></span></div>
+                <% end %>
+                <% if @xyops_evidence[:job] %>
+                  <div class="flex justify-between items-baseline"><span class="text-[10px]" style="color: var(--cg-muted-dim);">failed job</span> <span class="font-mono"><%= @xyops_evidence[:job] %></span></div>
+                <% end %>
+                <% if @xyops_evidence[:server] %>
+                  <div class="flex justify-between items-baseline"><span class="text-[10px]" style="color: var(--cg-muted-dim);">server</span> <span class="font-mono"><%= @xyops_evidence[:server] %></span></div>
+                <% end %>
+                <% if @xyops_evidence[:alert] %>
+                  <div class="flex justify-between items-baseline"><span class="text-[10px]" style="color: var(--cg-muted-dim);">linked alert</span> <span class="truncate"><%= @xyops_evidence[:alert] %></span></div>
+                <% end %>
+                <% if @xyops_evidence[:snapshot] %>
+                  <div class="pt-1.5 mt-1 border-t text-[10px] font-mono flex items-center gap-2" style="border-color: var(--cg-border); color: var(--cg-muted);">
+                    <%= heroicon("camera", classes: "w-3 h-3", stroke_width: 2) %>
+                    <span>cpu <%= @xyops_evidence[:snapshot][:cpu] || @xyops_evidence[:snapshot]["cpu"] || @xyops_evidence[:snapshot][:cpu_pct] %>% · redis <%= @xyops_evidence[:snapshot][:redis_ms] || @xyops_evidence[:snapshot]["redis_ms"] %>ms</span>
+                  </div>
+                <% end %>
+                <div class="pt-1">
+                  <% if @xyops_evidence[:remediation] %>
+                    <span class="inline-flex items-center gap-1 text-emerald-400 text-[10px]">
+                      <%= heroicon("check-circle", classes: "w-3 h-3") %> remediation executed via xyOps
+                    </span>
+                  <% else %>
+                    <span class="cg-chip--runbook" style="font-size: 10px; padding: 1px 6px;">remediation workflow available</span>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          <% end %>
+
           <%# Actions %>
           <div class="cg-panel">
             <div class="cg-panel-header">

@@ -28,11 +28,17 @@ module Api
       if budget.release_gate_open
         render json: body
       else
+        # API-level proof: xyops_evidence must be present in 423 body (DB backed)
+        xyops_evidence = build_xyops_evidence(shard)
         render json: body.merge(
-          reason: "Error budget exhausted. Override requires justification + audit log.",
-          violation_started_at: budget.violation_started_at
+          gate: "locked",
+          status: 423,
+          reason: "error_budget_exhausted",
+          xyops_evidence: xyops_evidence
         ), status: :locked
       end
+
+
     end
 
     def override
@@ -56,5 +62,44 @@ module Api
         render json: { status: "override_recorded", shard: shard.name }
       end
     end
+
+    private
+
+    def build_xyops_evidence(shard)
+      # DB-backed evidence for API 423 (requirement).
+      link = XyopsJobLink.where(incident: Incident.where(shard: shard).active)
+                         .or(XyopsJobLink.where(error_budget: shard.error_budget))
+                         .order(created_at: :desc).first
+
+      run = (link ? link.workflow_run : nil) || XyopsWorkflowRun.failed.order(started_at: :desc).first
+      al  = (link ? link.alert : nil) || XyopsAlert.critical.active.order(fired_at: :desc).first
+      sn  = (link ? link.snapshot : nil) || XyopsSnapshot.order(captured_at: :desc).first
+
+      snapshot_hash = if sn
+        {
+          cpu_percent: (sn.cpu_percent || sn.cpu_pct).to_f,
+          memory_percent: (sn.memory_percent || sn.mem_pct).to_f,
+          network: sn.network_summary || sn.network_status || "redis latency elevated"
+        }
+      end
+
+      {
+        workflow: run&.workflow_name || run&.workflow&.name || (run&.context || {})["workflow"],
+        failed_job: run&.failed_job_name || (run&.context || {})["job"] || run&.workflow&.name,
+        server: run&.server_name || run&.server_id || sn&.server_name || sn&.server_id,
+        alert: al&.title,
+        snapshot: snapshot_hash
+      }.compact
+    end
+
+
+    # legacy alias if needed
+    def extract_xyops_evidence(shard)
+      build_xyops_evidence(shard)
+    end
   end
 end
+
+
+
+

@@ -25,10 +25,20 @@
       last_eval_at: @budget.evaluated_at
     ) %>
 
-    <%# B. 30-Second Demo Flow %>
+    <%# B. Operations Fabric — xyOps execution context (flagship) %>
+    <%= render Ui::OperationsFabricComponent.new(
+      connection: @xyops_connection,
+      workflows: @xyops_workflows,
+      alerts: @xyops_alerts,
+      recent_runs: @xyops_recent_runs,
+      latest_snapshot: @xyops_latest_snapshot,
+      linked_incidents: @xyops_linked_incidents
+    ) %>
+
+    <%# C. 30-Second Demo Flow (now tells the governed automation story) %>
     <%= render Ui::DemoFlowComponent.new %>
 
-    <%# C. Release Gate Hero Panel %>
+    <%# D. Release Gate Hero Panel %>
     <%= render Ui::GatePanelComponent.new(
       gate_open: @budget.release_gate_open,
       reason: (@budget.release_gate_open ? nil : "Error budget exhausted. Override requires justification + audit log."),
@@ -37,7 +47,8 @@
       budget_remaining: @budget.budget_remaining.to_f,
       active_incident: @incidents.any? { |i| i.status.to_s.downcase != "resolved" },
       last_eval_at: @budget.evaluated_at,
-      recommended_action: (@budget.release_gate_open ? nil : "Review runbook before override")
+      recommended_action: (@budget.release_gate_open ? nil : "Review runbook before override"),
+      xyops: @gate_xyops
     ) %>
 
     <%# D. Decision Timeline — full-width horizontal %>

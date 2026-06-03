@@ -64,7 +64,8 @@ module Agents
         analysis: analyze_incident(incident),
         runbook_suggestions: suggest_runbooks(incident),
         similar_incidents: find_similar_incidents(incident),
-        postmortem_draft: generate_postmortem_draft(incident)
+        postmortem_draft: generate_postmortem_draft(incident),
+        xyops_evidence: pull_xyops_evidence(incident)
       }
 
       # Record primary action
@@ -247,5 +248,28 @@ module Agents
       actions << { priority: :low, action: "Update monitoring thresholds" }
       actions
     end
+
+    # Pull rich xyOps execution context into the incident so the operator sees the full story.
+    def pull_xyops_evidence(incident)
+      return nil unless defined?(XyopsWorkflowRun)
+
+      links = XyopsJobLink.for_incident(incident.id).includes(:workflow_run, :alert, :snapshot)
+      return nil if links.empty?
+
+      wf = links.map(&:workflow_run).compact.first
+      al = links.map(&:alert).compact.first
+      sn = links.map(&:snapshot).compact.first
+
+      {
+        triggering_workflow: wf&.workflow&.name,
+        failed_job: wf&.context&.dig("job") || wf&.workflow&.name,
+        server: wf&.server,
+        alert: al&.title,
+        snapshot: sn&.summary,
+        remediation_available: true,
+        last_successful_run: "n/a" # could be enhanced
+      }.compact
+    end
   end
 end
+

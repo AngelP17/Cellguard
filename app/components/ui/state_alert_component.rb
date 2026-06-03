@@ -4,7 +4,10 @@ module Ui
   # Error / empty / degraded state block.
   # Use for: dependency down, action failed, no data with a reason.
   class StateAlertComponent < ViewComponent::Base
+    include HeroiconsHelper
+
     LEVELS = %i[error warning info].freeze
+
 
     def initialize(level: :info, title:, message: nil, action_label: nil, action_href: nil)
       @level = LEVELS.include?(level.to_sym) ? level.to_sym : :info

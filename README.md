@@ -1,10 +1,16 @@
 # CellGuard
 
-> Reliability control plane that prevents bad deploys by enforcing release policy from live operational signals.
+> Self-hosted reliability control plane that governs operational workflows with SLO-aware release gates, autonomous reliability agents, chaos engineering, and audit-ready incident response.
 
 [![CI Gate Proof](https://github.com/AngelP17/Cellguard/actions/workflows/gate-proof.yml/badge.svg)](https://github.com/AngelP17/Cellguard/actions/workflows/gate-proof.yml)
 
-CellGuard evaluates every release against live SLO data, blocks deploys with `HTTP 423 Locked` when reliability evidence says no, and runs autonomous agents for budget protection, chaos orchestration, incident response, and healing.
+**CellGuard turns xyOps from an automation platform into a governed reliability system.**
+
+In flagship mode, CellGuard runs on top of **xyOps** — your local execution fabric for jobs, workflows, monitoring, alerting, and automation. xyOps executes and observes. CellGuard decides what is safe, enforces policy, triggers remediation, and proves every action.
+
+Together they form a complete, zero-cost, self-hosted reliability operating system.
+
+CellGuard evaluates live SLO and workflow evidence, blocks risky deployments with `HTTP 423 Locked`, coordinates autonomous reliability agents (budget_guard, healing, incident_response, chaos_orchestrator), and records every privileged action in an immutable cross-system audit trail.
 
 ```mermaid
 flowchart LR
@@ -22,37 +28,33 @@ flowchart LR
 
 ---
 
-## Quick Demo (30 seconds)
+## Flagship Demo (Closed-Loop Governance)
 
 ```bash
 ALLOW_DEMO_ENDPOINTS=true CLASSIFIER_STUB=true bin/run-all
 ```
 
-Then in another terminal:
+Then:
 
 ```bash
-# 1. Gate starts open
-curl -s http://localhost:3000/api/release-gate/check?shard=shard-default | jq
-
-# 2. Inject failures
-curl -s -X POST http://localhost:3000/api/inject-failures \
-  -H "Content-Type: application/json" \
-  -d '{"shard":"shard-default","queue":"default","minutes":5,"error_rate":0.15,"total":2000,"p95_latency_ms":650}' | jq
-
-# 3. Evaluate
-curl -s -X POST http://localhost:3000/api/evaluate \
-  -H "Content-Type: application/json" \
-  -d '{"shard":"shard-default","window_minutes":60}' | jq
-
-# 4. Gate is now LOCKED
-curl -si http://localhost:3000/api/release-gate/check?shard=shard-default | head -1
-# → HTTP/1.1 423 Locked
-
-# 5. Heal and re-check
-curl -s -X POST http://localhost:3000/api/chaos/heal | jq
+# Full gameday (xyOps fabric degradation → CellGuard ingests context → 423 lock → healing triggers xyOps remediation → gate reopens + full audit)
+make gameday
 ```
 
-Open the dashboard at <http://localhost:3000/dashboard>.
+The 11-step visual on the dashboard + the Operations Fabric panel show the complete story:
+
+1. xyOps runs production workflow  
+2. Degradation (latency/errors) detected → alert + job context emitted  
+3. CellGuard ingests operational evidence  
+4. SLO evaluation + xyops signals → gate locks (`HTTP 423`)  
+5. Incident created with server snapshot, workflow, alert  
+6. `healing` agent proposes + (in demo) executes xyOps remediation  
+7. xyOps completes remediation  
+8. CellGuard re-evaluates  
+9. Gate reopens  
+10. Audit trail correlates CellGuard decision + xyOps evidence + remediation
+
+Open the dashboard at <http://localhost:3000/dashboard> to see the Operations Fabric, rich gate evidence, and cross-system proof.
 
 ---
 
@@ -90,77 +92,44 @@ Mobile (375×812):
 
 ---
 
-## Architecture
+## Architecture (CellGuard governs xyOps)
 
-```mermaid
-flowchart TB
-    subgraph "Client Layer"
-        UI["Browser (Operator / CI)"]
-        CI["CI Pipeline"]
-    end
-
-    subgraph "Rails Web (port 3000)"
-        WEB["Rails 7.1 + Hotwire + ViewComponent"]
-        AC["ActionCable (AgentActivityChannel)"]
-    end
-
-    subgraph "Control Plane API"
-        GATE["/api/release-gate/*"]
-        EVAL["/api/evaluate"]
-        CHAOS["/api/chaos/*"]
-        AGENTS["/api/agents/*"]
-        INC["/api/incidents/*"]
-        AUDIT["/api/audit-logs"]
-        HEALTH["/api/healthz, /readyz, /status"]
-    end
-
-    subgraph "Background Workers"
-        SK["Sidekiq + Redis"]
-        SCHED["AgentScheduler (cron-like)"]
-    end
-
-    subgraph "Autonomous Agents"
-        BG["budget_guard"]
-        CO["chaos_orchestrator"]
-        IR["incident_response"]
-        HE["healing"]
-    end
-
-    subgraph "Go Execution Plane"
-        CLASS["go/classifier (:8081)"]
-        RUNNER["go/agent-runner (cron loop)"]
-    end
-
-    subgraph "Data Layer"
-        PG[("PostgreSQL")]
-        RD[("Redis")]
-    end
-
-    UI --> WEB
-    CI --> GATE
-    WEB --> GATE
-    WEB --> AGENTS
-    WEB --> INC
-    WEB --> AC
-    GATE --> PG
-    EVAL --> PG
-    EVAL --> CLASS
-    CHAOS --> RD
-    AGENTS --> SCHED
-    SCHED --> SK
-    SK --> BG
-    SK --> CO
-    SK --> IR
-    SK --> HE
-    BG --> PG
-    CO --> CHAOS
-    IR --> INC
-    HE --> PG
-    HE --> RD
-    CLASS --> PG
-    RUNNER --> AGENTS
-    AC --> WEB
 ```
+┌──────────────────────────────────────────────────────────────┐
+│                     CellGuard UI (Hotwire)                   │
+│  Dashboard • Release Gate (with xyops evidence) • Agents     │
+│  Incidents (xyops panel) • Audit (cross-system)              │
+└──────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌──────────────────────────────────────────────────────────────┐
+│                 CellGuard Control Plane                      │
+│  • SLO & Error Budget Engine (now workflow-aware)            │
+│  • Gate Engine (xyops signals accelerate burn/lock)          │
+│  • Agent Engine (healing triggers xyops remediation safely)  │
+│  • xyOps Adapter (client, ingestor, remediation_runner)      │
+└──────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌──────────────────────────────────────────────────────────────┐
+│                   xyOps Execution Fabric                     │
+│  Jobs • Workflows • Monitoring • Alerts • Snapshots          │
+│  (simulated in demo via Xyops::Simulator; real in prod)      │
+└──────────────────────────────────────────────────────────────┘
+```
+
+**Division of responsibility**
+
+| Layer                    | CellGuard owns                                      | xyOps owns                                      |
+|--------------------------|-----------------------------------------------------|-------------------------------------------------|
+| Reliability intelligence | SLOs, error budgets, release gates, lock decisions  | Operational context (jobs, workflows, alerts)   |
+| Safety policy            | Gate rules, agent guardrails, full audit trail      | Workflow execution constraints                  |
+| Incident response        | State, severity, runbooks, audit linkage            | Job history, server snapshots, alert context    |
+| Automation               | budget_guard, healing, incident_response, chaos     | Cross-system workflows, scheduled automation    |
+| Proof                    | "Why did the gate lock?"                            | "What was running, where, and what changed?"    |
+```
+
+**CellGuard governs xyOps.** xyOps runs the work. CellGuard makes the automations safe, SLO-aware, auditable, and release-impacting.
 
 ---
 

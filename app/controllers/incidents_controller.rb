@@ -35,5 +35,30 @@ class IncidentsController < ApplicationController
     else
       "No acks yet"
     end
+
+    # Attach xyOps evidence for the featured incident (FROM DB models)
+    @featured = @incidents.first
+    @xyops_evidence = begin
+      if @featured && defined?(XyopsJobLink)
+        links = XyopsJobLink.for_incident(@featured.id).includes(:workflow_run, :alert, :snapshot).order(created_at: :desc)
+        run = links.map(&:xyops_workflow_run).compact.first || XyopsWorkflowRun.order(created_at: :desc).first
+        al = links.map(&:xyops_alert).compact.first || XyopsAlert.order(fired_at: :desc).first
+        sn = links.map(&:xyops_snapshot).compact.first || XyopsSnapshot.order(captured_at: :desc).first
+        if run || al || sn
+          {
+            workflow: run&.workflow_name || run&.workflow&.name,
+            job: run&.failed_job_name || (run&.context || {})["job"],
+            server: run&.server_name || run&.server_id || sn&.server_name,
+            alert: al&.title,
+            snapshot: sn ? { cpu: (sn.cpu_percent || sn.cpu_pct), redis_ms: (sn.redis_latency_ms || 0) } : nil,
+            remediation: links.any? { |l| l.role == "remediation" } || run&.status == "succeeded"
+          }.compact
+        end
+      end
+    rescue
+      nil
+    end
   end
 end
+
+

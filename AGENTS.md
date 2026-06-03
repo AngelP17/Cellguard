@@ -272,6 +272,8 @@ curl -X POST http://localhost:3000/api/agents/chaos_orchestrator/toggle \
 | `app/jobs/agent_run_job.rb` | Sidekiq job that runs one agent on one shard |
 | `app/channels/agent_activity_channel.rb` | WebSocket activity feed |
 | `db/schema.rb` | Source of truth for the data model |
+| `app/services/xyops/*` | The adapter layer: client, remediation_runner (safety), event_ingestor, simulator |
+| `app/models/xyops_*.rb` + migration 20250425... | Execution fabric state for audit/incident context |
 | `config/sidekiq.yml` | Sidekiq + scheduler config |
 | `go/classifier/` | Go classifier service |
 | `go/agent-runner/` | Go agent runner (calls Rails HTTP APIs) |

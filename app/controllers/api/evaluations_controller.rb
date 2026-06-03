@@ -52,7 +52,11 @@ module Api
             budget: {
               remaining: budget.budget_remaining,
               burn_rate: budget.current_burn_rate
-            }
+            },
+            xyops: begin
+              fr = XyopsWorkflowRun.failed.order(started_at: :desc).first
+              fr ? { workflow: fr.workflow.name, run: fr.external_id, server: fr.server } : nil
+            end
           }
         )
       end

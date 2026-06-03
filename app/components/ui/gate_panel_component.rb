@@ -10,7 +10,8 @@ module Ui
       budget_remaining:,
       active_incident: nil,
       last_eval_at: nil,
-      recommended_action: nil
+      recommended_action: nil,
+      xyops: nil
     )
       @gate_open = gate_open
       @reason = reason
@@ -20,7 +21,9 @@ module Ui
       @active_incident = active_incident
       @last_eval_at = last_eval_at
       @recommended_action = recommended_action
+      @xyops = xyops || {}
     end
+
 
     def visual_classes
       base = "cg-gate-hero__visual"

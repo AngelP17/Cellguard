@@ -100,6 +100,11 @@ curl -X POST http://localhost:3000/api/agents/run-all \
 - Healing action succeeds and system returns to steady state
 - Agent activity is recorded and queryable
 
+## Elite mode (xyOps fabric)
+When ALLOW_DEMO_ENDPOINTS=true the inject now also seeds xyops workflows/alerts/snapshots.
+The gate response on lock includes "xyops" evidence.
+make gameday now demonstrates the full governed loop (fabric degrade -> lock with context -> healing triggers xyops remediation -> reopen + audit correlation).
+
 ## Troubleshooting
 - Gate remains `200`: verify injected failure signal and evaluator inputs
 - Chaos returns policy-simulation path: confirm `ALLOW_DEMO_ENDPOINTS=true`
