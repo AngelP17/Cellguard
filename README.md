@@ -85,24 +85,6 @@ Live reliability OS signals above the fold: gate state, burn, budget, xyOps fabr
 ### Dashboard: Open Gate
 Command cockpit with release gate, fabric evidence, agent status, and audit context in one viewport.
 
-![Dashboard open](./screenshots/dashboard-open.png)
-
-### Dashboard: Locked Gate
-The same cockpit in the blocked state, with red policy treatment and xyOps cause-of-lock evidence.
-
-![Dashboard locked](./screenshots/dashboard-locked.png)
-
-### Incidents: Triage
-Featured incident, xyOps evidence, runbook actions, SLA impact, lifecycle activity, and policy context.
-
-![Incidents](./screenshots/incidents-desktop.png)
-
-Mobile (375×812):
-
-| Dashboard | Incidents |
-|-----------|-----------|
-| ![Mobile dashboard](./screenshots/dashboard-mobile.png) | ![Mobile incidents](./screenshots/incidents-mobile.png) |
-
 ---
 
 **Regeneration:** After UI changes run `npm run screenshot:open`, `npm run screenshot:locked`, `npm run screenshots`, plus `make go-ui-smoke`. `screenshot:open` owns `dashboard-open.png` and `dashboard-mobile.png`; `screenshot:locked` owns `dashboard-locked.png`; `screenshots` owns landing and incidents. Always inspect new PNGs before committing. See AGENTS.md for frontend done-when criteria.
