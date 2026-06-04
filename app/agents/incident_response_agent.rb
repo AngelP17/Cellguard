@@ -78,14 +78,14 @@ module Agents
         })
       end
 
-      # Update incident with metadata
-      incident.update!(
-        context: incident.context.merge(
-          agent_analysis: result[:analysis],
-          suggested_runbooks: result[:runbook_suggestions],
-          similar_incidents: result[:similar_incidents].map(&:id)
-        )
-      )
+      # Update incident with metadata (normalize keys to strings to avoid duplicate-key JSON warnings on serialization)
+      ctx = (incident.context || {}).dup
+      ctx.delete("suggested_runbooks")
+      ctx.delete(:suggested_runbooks)
+      ctx["agent_analysis"] = result[:analysis]
+      ctx["suggested_runbooks"] = result[:runbook_suggestions]
+      ctx["similar_incidents"] = result[:similar_incidents].map(&:id)
+      incident.update!(context: ctx)
 
       result
     end

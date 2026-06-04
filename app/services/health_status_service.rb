@@ -8,6 +8,9 @@ class HealthStatusService
       Rails.cache.fetch("cellguard:health_status", expires_in: 10.seconds) do
         fetch
       end
+    rescue StandardError => e
+      Rails.logger.warn("[HealthStatusService] cache fetch skipped: #{e.class}: #{e.message}") if defined?(Rails)
+      fetch
     end
 
     def badge_label

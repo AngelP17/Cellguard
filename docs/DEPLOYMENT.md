@@ -2,6 +2,20 @@
 
 CellGuard ships a production-ready Dockerfile that works with any Docker-compatible runtime (Docker, Podman, containerd, ECS, Fly.io, Render, Railway, etc.). The image bundles the Rails web app and Sidekiq worker entrypoints; the Go classifier and Go agent-runner are separate small images.
 
+## Runtime topology
+
+```mermaid
+flowchart LR
+    LB["Load balancer or reverse proxy"] --> WEB["web container: Rails on 3000"]
+    WEB --> PG["PostgreSQL"]
+    WEB --> REDIS["Redis"]
+    WEB --> CLASS["classifier container: Go on 8081"]
+    WORKER["worker container: Sidekiq"] --> PG
+    WORKER --> REDIS
+    WORKER --> CLASS
+    RUNNER["agent-runner container"] --> WEB
+```
+
 ## Image roles
 
 | Role | Image | Port | Entry point |
@@ -79,6 +93,15 @@ docker run -d --name cellguard-classifier -p 8081:8081 cellguard-classifier
 ## Container smoke commands
 
 Run these after a fresh deploy to verify the stack is healthy:
+
+```mermaid
+flowchart LR
+    A["Run migrations"] --> B["Check liveness"]
+    B --> C["Check readiness"]
+    C --> D["Check detailed status"]
+    D --> E["Check release gate"]
+    E --> F["Confirm admin endpoint rejects missing token"]
+```
 
 ```bash
 # 1. Migrations (one-shot, can be a Kubernetes Job or pre-deploy hook)

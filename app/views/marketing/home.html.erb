@@ -5,180 +5,139 @@
   variant: :landing
 ) do %>
 
-  <%# ============================================================
-      HERO — Cinematic Center
-      ============================================================ %>
-  <section class="cg-hero" data-gsap="hero">
-    <div class="cg-hero__content">
-      <h1 class="cg-hero__title" data-gsap="hero-title">CellGuard</h1>
-      <p class="cg-hero__subtitle" data-gsap="hero-subtitle">
-        Deploy decisions backed by live reliability evidence.
+  <% gate_open = @budget.release_gate_open %>
+  <% gate_code = gate_open ? "200 OK" : "423 LOCKED" %>
+  <% open_incidents = @incidents.count { |i| i.status.to_s.downcase != "resolved" } %>
+  <% active_agents = @agent_status.count { |agent| agent[:enabled] } %>
+
+  <section class="cg-exec-hero <%= gate_open ? 'is-open' : 'is-locked' %>" data-gsap="hero">
+    <div class="cg-exec-hero__copy">
+      <div class="cg-brand-lockup">
+        <span class="cg-brand-lockup__mark"></span>
+        CellGuard
+      </div>
+      <h1 class="cg-exec-hero__title" data-gsap="hero-title">
+        Govern releases with live proof.
+      </h1>
+      <p class="cg-exec-hero__lead" data-gsap="hero-subtitle">
+        CellGuard turns SLOs, xyOps fabric signals, autonomous agents, and audit records into one release decision system.
       </p>
-      <p class="cg-hero__desc" data-gsap="hero-desc">
-        Prevent bad deploys with policy-as-code gates, error budgets, chaos drills,
-        and audited overrides. Every release evaluated against live SLO data.
-      </p>
-      <div class="cg-hero__actions" data-gsap="hero-cta">
-        <a href="/dashboard" class="cg-btn--hero-primary">Open Dashboard</a>
-        <a href="/incidents" class="cg-btn--hero-secondary">View Incidents</a>
+      <div class="cg-exec-hero__actions" data-gsap="hero-cta">
+        <a href="/dashboard" class="cg-btn cg-btn--primary cg-btn--lg">Open Mission Control</a>
+        <a href="/incidents" class="cg-btn cg-btn--secondary cg-btn--lg">Review Incidents</a>
+        <a href="/runbooks/gameday" class="cg-btn cg-btn--ghost cg-btn--lg">Game Day Runbook</a>
       </div>
-      <div data-gsap="hero-indicator">
-        <div class="cg-gate-indicator <%= @budget.release_gate_open ? 'cg-gate-indicator--open' : 'cg-gate-indicator--locked' %>">
-          <span class="cg-gate-indicator__dot"></span>
-          Release Gate &mdash; <%= @budget.release_gate_open ? 'Open' : 'Locked' %>
+    </div>
+
+    <div class="cg-exec-hero__proof" data-gsap="bento-gate">
+      <div class="cg-gate-orb <%= gate_open ? 'is-open' : 'is-locked' %>">
+        <div class="cg-gate-orb__code"><%= gate_code %></div>
+        <div class="cg-gate-orb__label">Release Gate</div>
+        <div class="cg-gate-orb__subline">
+          <%= gate_open ? "SLO compliant. Deployments permitted." : "Deploys blocked until evidence clears." %>
+        </div>
+      </div>
+
+      <div class="cg-proof-grid">
+        <div class="cg-proof-tile">
+          <span>Burn Rate</span>
+          <strong class="<%= @budget.current_burn_rate.to_f < 1.0 ? 'is-ok' : 'is-danger' %>"><%= @budget.current_burn_rate.to_f %>x</strong>
+          <small>Current velocity</small>
+        </div>
+        <div class="cg-proof-tile">
+          <span>Budget</span>
+          <strong class="<%= @budget.budget_remaining.to_f > 0.1 ? 'is-ok' : 'is-danger' %>"><%= (@budget.budget_remaining.to_f * 100).round(1) %>%</strong>
+          <small>Remaining</small>
+        </div>
+        <div class="cg-proof-tile">
+          <span>Incidents</span>
+          <strong><%= open_incidents %></strong>
+          <small>Open triage items</small>
+        </div>
+        <div class="cg-proof-tile">
+          <span>Agents</span>
+          <strong><%= active_agents %>/<%= @agent_status.size %></strong>
+          <small>Enabled control loops</small>
+        </div>
+      </div>
+
+      <div class="cg-proof-strip">
+        <div>
+          <span>Signal</span>
+          <strong>xyOps job + alert</strong>
+        </div>
+        <div>
+          <span>Decision</span>
+          <strong><%= gate_code %></strong>
+        </div>
+        <div>
+          <span>Action</span>
+          <strong><%= gate_open ? "Monitor" : "Runbook + healing" %></strong>
+        </div>
+        <div>
+          <span>Proof</span>
+          <strong>audit_logs</strong>
         </div>
       </div>
     </div>
   </section>
 
-  <%# ============================================================
-      LIVE EVIDENCE — Asymmetric Bento Grid
-      ============================================================ %>
-  <section class="cg-land-section" data-gsap="evidence-section">
-    <div class="cg-bento">
-      <%# Large hero cell: gate status %>
-      <div class="cg-bento__hero">
-        <div class="cg-bento__cell cg-bento__cell--accent-<%= @budget.release_gate_open ? 'green' : 'red' %>" style="height: 100%;" data-gsap="bento-gate">
-          <div class="cg-bento__gate <%= @budget.release_gate_open ? 'is-open' : 'is-locked' %>">
-            <div class="cg-bento__gate-http <%= @budget.release_gate_open ? 'is-open' : 'is-locked' %>"><%= @budget.release_gate_open ? '200' : '423' %></div>
-            <div class="cg-bento__gate-label <%= @budget.release_gate_open ? 'is-open' : 'is-locked' %>"><%= @budget.release_gate_open ? 'Gate Open' : 'Gate Locked' %></div>
-            <div class="cg-bento__gate-reason">
-              <%= @budget.release_gate_open ? 'All checks passing. Safe to deploy.' : 'Error budget exhausted. Override requires justification.' %>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <%# Metric cell: Burn Rate %>
-      <div class="cg-bento__cell cg-bento__cell--accent-blue" data-gsap="bento-1">
-        <div class="cg-bento__metric-label">Burn Rate</div>
-        <div class="cg-bento__metric-value <%= @budget.current_burn_rate.to_f < 1.0 ? 'is-ok' : (@budget.current_burn_rate.to_f < 2.0 ? 'is-warn' : 'is-danger') %>"><%= @budget.current_burn_rate.to_f %>x</div>
-        <div class="cg-bento__metric-meta">Current consumption velocity</div>
-      </div>
-
-      <%# Metric cell: Budget Remaining %>
-      <div class="cg-bento__cell" data-gsap="bento-2">
-        <div class="cg-bento__metric-label">Budget Remaining</div>
-        <div class="cg-bento__metric-value <%= @budget.budget_remaining.to_f > 0.1 ? 'is-ok' : (@budget.budget_remaining.to_f > 0.0 ? 'is-warn' : 'is-danger') %>"><%= (@budget.budget_remaining.to_f * 100).round(1) %>%</div>
-        <div class="cg-bento__metric-meta">Error budget available</div>
-      </div>
+  <section class="cg-operating-system" data-gsap="evidence-section">
+    <div class="cg-section-heading">
+      <h2>One closed-loop reliability operating system</h2>
+      <p>Built for the operator who needs control, the executive who needs proof, and the incident commander who needs next action.</p>
     </div>
 
-    <%# Bottom metrics row — 4 equal cells %>
-    <div class="cg-bento-row" data-gsap="bento-row">
-      <div class="cg-bento__cell cg-bento__cell--accent-green">
-        <div class="cg-bento__metric-label">SLO Target</div>
-        <div class="cg-bento__metric-value is-ok"><%= (@budget.slo_target.to_f * 100).round(1) %>%</div>
-        <div class="cg-bento__metric-meta">Service level objective</div>
-      </div>
-      <div class="cg-bento__cell">
-        <div class="cg-bento__metric-label">Window</div>
-        <div class="cg-bento__metric-value is-muted"><%= @budget.window_days %>d</div>
-        <div class="cg-bento__metric-meta">Rolling assessment period</div>
-      </div>
-      <div class="cg-bento__cell">
-        <div class="cg-bento__metric-label">Budget Consumed</div>
-        <div class="cg-bento__metric-value <%= @budget.budget_consumed.to_f > 0.9 ? 'is-danger' : (@budget.budget_consumed.to_f > 0.7 ? 'is-warn' : 'is-muted') %>"><%= (@budget.budget_consumed.to_f * 100).round(1) %>%</div>
-        <div class="cg-bento__metric-meta">Error budget used</div>
-      </div>
-      <div class="cg-bento__cell cg-bento__cell--accent-blue">
-        <div class="cg-bento__metric-label">Action Required</div>
-        <div style="font-size: 0.82rem; font-weight: 600; color: var(--cg-text); margin-top: 0.35rem;"><%= @budget.release_gate_open ? 'Monitor burn rate' : 'Review runbook' %></div>
-        <div class="cg-bento__metric-meta"><%= @budget.release_gate_open ? 'No immediate action' : 'Override needs justification' %></div>
-      </div>
-    </div>
-  </section>
-
-  <%# ============================================================
-      CAPABILITIES — Three Premium Feature Cards
-      ============================================================ %>
-  <section class="cg-land-section" data-gsap="capabilities-section">
-    <div class="cg-capabilities">
-      <article class="cg-capability cg-capability--green" data-gsap="cap-1">
-        <div class="cg-capability__icon cg-capability__icon--green">&#9632;</div>
-        <div class="cg-capability__title">Policy-as-Code Gates</div>
-        <div class="cg-capability__desc">
-          Release gates evaluated against live SLO error budgets. When burn rate exceeds threshold,
-          the gate locks with HTTP 423. No human judgment required.
+    <div class="cg-system-map">
+      <article class="cg-system-cell cg-system-cell--wide">
+        <div class="cg-system-cell__label">Mission Control</div>
+        <h3>Gate state, SLO burn, fabric evidence, agents, and audit trail in one cockpit.</h3>
+        <div class="cg-mini-command">
+          <span class="<%= gate_open ? 'is-ok' : 'is-danger' %>"><%= gate_code %></span>
+          <span>shard-default</span>
+          <span><%= @budget.current_burn_rate.to_f %>x burn</span>
+          <span><%= (@budget.budget_remaining.to_f * 100).round(1) %>% budget</span>
         </div>
-        <div class="cg-capability__badge">HTTP 423 &middot; Automatic enforcement</div>
       </article>
 
-      <article class="cg-capability cg-capability--blue" data-gsap="cap-2">
-        <div class="cg-capability__icon cg-capability__icon--blue">&#9670;</div>
-        <div class="cg-capability__title">Chaos Engineering</div>
-        <div class="cg-capability__desc">
-          Controlled fault injection validates closed-loop reliability. Partition infrastructure,
-          degrade network, watch the gate lock and the runbook trigger.
-        </div>
-        <div class="cg-capability__badge">Game Day &middot; Docker / tc</div>
+      <article class="cg-system-cell">
+        <div class="cg-system-cell__label">Executive Demo</div>
+        <h3>Show why the gate locked, what changed, who acted, and when it recovered.</h3>
+        <p>Every screenshot has a visible story: signal, decision, action, proof.</p>
       </article>
 
-      <article class="cg-capability cg-capability--amber" data-gsap="cap-3">
-        <div class="cg-capability__icon cg-capability__icon--amber">&#9650;</div>
-        <div class="cg-capability__title">Audited Overrides</div>
-        <div class="cg-capability__desc">
-          Every manual override requires justification and is written to the audit trail.
-          Who, when, why, and what evidence existed at the time. No shadow operations.
-        </div>
-        <div class="cg-capability__badge">Immutable &middot; Audit Log</div>
+      <article class="cg-system-cell">
+        <div class="cg-system-cell__label">Incident Command</div>
+        <h3>Classifier context, runbook recommendation, xyOps evidence, SLA impact.</h3>
+        <p>Operators can acknowledge, escalate, resolve, or add notes without losing context.</p>
       </article>
     </div>
   </section>
 
-  <%# ============================================================
-      WORKFLOW — Horizontal Pipeline
-      ============================================================ %>
-  <section class="cg-land-section" data-gsap="workflow-section">
-    <div class="cg-pipeline" data-gsap="pipeline">
-      <% ["Signal", "Evaluation", "Gate", "Incident", "Runbook", "Audit"].each do |step| %>
-        <div class="cg-pipeline__step">
-          <div class="cg-pipeline__step-dot"></div>
-          <div class="cg-pipeline__step-label"><%= step %></div>
-        </div>
-      <% end %>
-    </div>
-  </section>
-
-  <%# ============================================================
-      ACTIVITY FEED — Recent Agent Activity
-      ============================================================ %>
-  <section class="cg-land-section" data-gsap="activity-section">
-    <div class="cg-activity-feed">
-      <div class="cg-activity-feed__header">
-        <div class="cg-activity-feed__title">Recent Agent Activity</div>
-        <div class="flex items-center gap-2">
-          <div class="w-2 h-2 rounded-full animate-pulse" style="background: var(--cg-ok);"></div>
-          <span style="font-size: 0.65rem; color: var(--cg-muted-dim);">Live</span>
-        </div>
+  <section class="cg-live-activity" data-gsap="activity-section">
+    <div class="cg-live-activity__header">
+      <div>
+        <div class="cg-panel-title">Recent Agent Activity</div>
+        <div class="cg-panel-subtitle">Autonomous reliability loop</div>
       </div>
+      <span class="cg-state-badge cg-state-badge--open">Live</span>
+    </div>
+    <div class="cg-activity-rail">
       <% @recent_activity.first(5).each do |activity| %>
-        <div class="cg-activity-feed__item">
-          <div class="cg-activity-feed__dot <%= activity[:status] == 'completed' ? 'is-ok' : (activity[:status] == 'failed' ? 'is-danger' : 'is-warn') %>"></div>
-          <div style="flex: 1; min-width: 0;">
-            <div class="flex items-center gap-2">
-              <span style="font-size: 0.82rem; font-weight: 600; color: var(--cg-text);"><%= activity[:agent].to_s.titleize %></span>
-              <% if activity[:shard] %>
-                <span class="font-mono" style="font-size: 0.68rem; color: var(--cg-muted-dim);"><%= activity[:shard] %></span>
-              <% end %>
-            </div>
-            <% if activity[:action].present? %>
-              <div style="font-size: 0.72rem; color: var(--cg-muted); margin-top: 0.15rem;"><%= activity[:action].to_s.humanize %></div>
-            <% end %>
+        <div class="cg-activity-rail__item">
+          <span class="cg-activity-rail__dot <%= activity[:status] == 'failed' ? 'is-danger' : 'is-ok' %>"></span>
+          <div>
+            <strong><%= activity[:agent].to_s.titleize %></strong>
+            <span><%= activity[:action].presence || activity[:status].to_s.humanize %></span>
           </div>
-          <div style="font-size: 0.68rem; color: var(--cg-muted-dim); white-space: nowrap;">
-            <%= time_ago_in_words(activity[:created_at]) %> ago
-          </div>
+          <small><%= time_ago_in_words(activity[:created_at]) %> ago</small>
         </div>
       <% end %>
     </div>
   </section>
 
-  <%# ============================================================
-      STACK STRIP — Tech badges inline
-      ============================================================ %>
   <div class="cg-stack-strip" data-gsap="stack-strip">
-    <% ["Rails 7.1", "Hotwire", "Sidekiq", "Redis", "PostgreSQL", "ActionCable", "Go"].each do |tech| %>
+    <% ["Rails 7.1", "Hotwire", "ViewComponent", "Sidekiq", "Redis", "PostgreSQL", "ActionCable", "Go"].each do |tech| %>
       <span class="cg-stack-strip__badge"><%= tech %></span>
     <% end %>
   </div>

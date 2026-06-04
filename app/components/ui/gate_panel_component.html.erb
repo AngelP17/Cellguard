@@ -1,4 +1,4 @@
-<div class="<%= panel_classes %>" data-controller="gate-panel" data-gate-open="<%= @gate_open ? 'true' : 'false' %>" data-gsap="gate-panel">
+<div class="<%= panel_classes %> cg-gate-hero-wrapper" data-controller="gate-panel" data-gate-open="<%= @gate_open ? 'true' : 'false' %>" data-gsap="gate-panel">
   <div class="cg-gate-hero">
     <div class="<%= visual_classes %>">
       <div class="cg-gate-hero__lock-icon"><%= lock_icon %></div>
@@ -45,7 +45,7 @@
       </div>
 
       <% if !@gate_open && @xyops.present? %>
-        <div class="mt-3 pt-3 border-t" style="border-color: color-mix(in srgb, var(--cg-danger) 18%, var(--cg-border));">
+        <div class="mt-3 pt-3 border-t cg-xyops-accent" style="border-color: color-mix(in srgb, var(--cg-accent) 22%, var(--cg-border));">
           <div class="flex items-center gap-2 mb-1.5">
             <%= heroicon("server-stack", classes: "w-3.5 h-3.5", stroke_width: 1.75) %>
             <div class="uppercase text-[9px] tracking-[0.12em] font-semibold" style="color: var(--cg-muted-dim);">XYOPS FABRIC EVIDENCE — CAUSE OF LOCK</div>

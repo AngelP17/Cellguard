@@ -287,6 +287,41 @@ curl -X POST http://localhost:3000/api/agents/chaos_orchestrator/toggle \
 - `node_modules/` — JS deps
 - `screenshots/` — generated evidence
 
+## Design & Frontend Conventions (flagship mission control / exec demo / incident command)
+
+The visible product experience must credibly read as **mission control** (dashboard cockpit), **executive demo** (landing first viewport), and **incident command** (incidents triage) in one coherent premium B2B reliability control plane.
+
+**Core rules (locked by 2026 flagship pass):**
+- First viewport on `/` must surface live OS signals above fold: gate state (200/423), SLO/burn/budget, xyOps fabric peek, active agents count, recent audit. Not a generic SaaS hero.
+- `/dashboard` uses **command composition grid** (not pure vertical stack of panels) for first viewport: release gate (large), xyOps/ops fabric, active agents, audit trail visible together + command bar. Lower content (demo flow, full agents, scorecards, chaos, recent lists) preserved for complete operator journey.
+- Open vs locked states are **visually distinct and screenshot-worthy**: green calm/permissioned (tints, glows, 200 dominant) vs red urgent (pulses, danger accents, full "CAUSE OF LOCK" xyOps evidence block emphasized).
+- `/incidents` gives featured incident + xyOps evidence + runbook/action/SLA/timeline **clear visual hierarchy** in sidebar; mobile collapses to usable triage stack (list then sections), not long dark boxes.
+- **Tokens (source of truth in `application.css` :root)**: --cg-bg #050814, --cg-surface rgba(12,20,40,0.82), --cg-border rgba(100,116,139,0.18), --cg-text #e2e8f0, --cg-ok #22c55e, --cg-danger #ef4444, --cg-info #38bdf8, --cg-accent #22c55e, --cg-accent-cool #38bdf8, --cg-line rgba(148,163,184,0.18). Typography: Geist body, JetBrains Mono for all metrics/codes/evidence. Radii 0.45-0.95rem, dense padding 0.5-1.35rem, subtle blur + linear evidence grids. Never generic dark cards.
+- **No new frameworks.** Rails + Hotwire + ViewComponent + Stimulus + custom .cg-* CSS only. Prefer edits to page views + component templates + CSS + tiny presentation Stimulus.
+- **Data:** sourced from existing controller instance variables (minimal ivar adds for presentation data only; no behavior/logic changes). Never-empty via DemoDataService.
+- **Preserve exactly:** all actions (run eval/gameday/heal/override/agent toggle/run, incident ack/resolve/escalate/note, demo steps, chaos buttons), WS feeds, modals, audit on mutations, token guards (bypass in demo), gate 200/423 semantics.
+- **Icons:** expand `heroicons_helper.rb` (inline SVG) when new evidence panels need them; no gem.
+- **Motion:** existing CSS + data-gsap (shell); respect reduced-motion. No new libs.
+- **Screenshots (generated evidence, replace only after verification):** `npm run screenshots` (landing/dashboard/incidents/docs, desktop+mobile), `npm run screenshot:open`, `npm run screenshot:locked` (self-seed + capture), `make go-ui-smoke` (tmp/ui-dashboard.png). BASE_URL=http://127.0.0.1:3000 when needed. Always run against seeded state (gameday/reset for locked/open).
+- **Visual inspection (mandatory before docs update):** use `view_image` on `screenshots/*.png` and `tmp/ui-*.png`. Verify: first viewport signals/composition present, open vs locked distinct, no overlap/cut text/unreadable controls/empty flagship panels, mobile usable (no h-scroll, touch targets), matches accepted design targets (session images from planning or equivalent), high evidence density but scannable.
+- Update `README.md` (screenshots section text only) and this `AGENTS.md` **only after** new screenshots pass inspection + tests/gameday.
+
+**Files for frontend work:**
+- `app/assets/stylesheets/application.css` (tokens + .cg-exec-* / .cg-mission-* / .cg-incident-* / open/locked states)
+- `app/views/marketing/home.html.erb`, `app/views/dashboard/index.html.erb`, `app/views/incidents/index.html.erb`
+- `app/components/ui/*_component.html.erb` (small state/evidence tweaks)
+- `app/helpers/heroicons_helper.rb`
+- Controllers only for presentation ivars (rescued).
+
+**Verification steps for any frontend change:**
+1. `bundle exec rails test && make go-classifier-test && make go-agent-runner-test`
+2. `ALLOW_DEMO_ENDPOINTS=true CLASSIFIER_STUB=true bin/run-all` (or partial)
+3. `make gameday` (or closest; note blockers)
+4. `make go-ui-smoke`
+5. `npm run screenshot:open && npm run screenshot:locked && npm run screenshots`
+6. `view_image` on new screenshots + visual checklist above.
+7. Update README + AGENTS.md design section only on pass.
+
 ## Done-when checklist
 
 A change is "done" when all of these are true:
@@ -296,13 +331,15 @@ A change is "done" when all of these are true:
 3. `make go-agent-runner-test` passes
 4. `make gameday` transitions the gate from `200` to `423 Locked` and back
 5. `make go-ui-smoke` renders the dashboard without errors
-6. No raw exception messages leak from API endpoints (production mode)
-7. Any new mutation endpoint is covered by `Api::TokenGuard`
-8. Any new mutation endpoint writes to `audit_logs` via `Api::RequestAudit`
-9. No new gem added without justification in the PR description
-10. No new env var added without documenting it in `README.md` and `docs/DEPLOYMENT.md`
-11. No new endpoint added without updating the API contract table above
-12. No schema change without a migration
+6. New screenshots (npm scripts + go-ui-smoke) pass visual inspection via `view_image` (first viewport signals/composition, open vs locked distinct, no layout bugs, match design targets, mobile usable)
+7. `AGENTS.md` "Design & Frontend Conventions" + README screenshots section updated (post-inspection)
+8. No raw exception messages leak from API endpoints (production mode)
+9. Any new mutation endpoint is covered by `Api::TokenGuard`
+10. Any new mutation endpoint writes to `audit_logs` via `Api::RequestAudit`
+11. No new gem added without justification in the PR description
+12. No new env var added without documenting it in `README.md` and `docs/DEPLOYMENT.md`
+13. No new endpoint added without updating the API contract table above
+14. No schema change without a migration
 
 ## Consolidated implementation priorities
 

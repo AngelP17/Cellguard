@@ -13,7 +13,7 @@ if command -v rbenv >/dev/null 2>&1; then
   eval "$(rbenv init - zsh)"
 fi
 
-TRIGGER_ASYNC=true
+TRIGGER_AGENTS=true
 MONITOR=true
 MONITOR_INTERVAL=5
 HOST="http://127.0.0.1:3000"
@@ -42,7 +42,7 @@ EOF
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --no-trigger)
-      TRIGGER_ASYNC=false
+      TRIGGER_AGENTS=false
       shift
       ;;
     --no-monitor)
@@ -125,11 +125,11 @@ echo "Services are up. Rails status: $code"
 echo "--- Sidekiq schedule status (tail) ---"
 rg -n "Scheduling agent_scheduler|Schedules Loaded|Sidekiq" log/sidekiq.log | tail -n 5 || true
 
-if [[ "$TRIGGER_ASYNC" == "true" ]]; then
-  echo "Triggering async agent fanout..."
+if [[ "$TRIGGER_AGENTS" == "true" ]]; then
+  echo "Triggering sync agent fanout..."
   curl -s -X POST "$HOST/api/agents/run-all" \
     -H "Content-Type: application/json" \
-    -d '{"async":true}' | tee /tmp/cellguard_run_all_response.json
+    -d '{"async":false}' | tee /tmp/cellguard_run_all_response.json
   echo
 fi
 

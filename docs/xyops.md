@@ -2,6 +2,20 @@
 
 CellGuard's flagship mode treats xyOps as the local operations execution fabric it governs.
 
+## Governed execution loop
+
+```mermaid
+flowchart LR
+    XY["xyOps jobs, workflows, alerts, snapshots"] --> ING["Event ingestor"]
+    ING --> JS["JobStat and Incident records"]
+    JS --> EVAL["BudgetEvaluator"]
+    EVAL --> GATE["Release gate decision"]
+    GATE --> AGENT["Healing agent"]
+    AGENT --> REM["RemediationRunner"]
+    REM --> XY
+    REM --> AUDIT["audit_logs and xyops_job_links"]
+```
+
 ## Adapter
 
 `app/services/xyops/`
@@ -43,5 +57,4 @@ All remediation goes through `Xyops::RemediationRunner`.
 
 See README "Flagship Demo" and `make gameday`.
 
-The 15-step narrative is now the product truth:
-xyOps runs the automation. CellGuard decides if it is safe, blocks releases, triggers recovery, and proves the entire loop.
+The product truth is the closed loop: xyOps runs the automation, CellGuard decides if it is safe, blocks releases, triggers recovery, and proves the entire loop.

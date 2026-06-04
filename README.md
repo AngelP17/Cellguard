@@ -41,18 +41,22 @@ Then:
 make gameday
 ```
 
-The 11-step visual on the dashboard + the Operations Fabric panel show the complete story:
+The dashboard and Operations Fabric panel show the complete working loop:
 
-1. xyOps runs production workflow  
-2. Degradation (latency/errors) detected → alert + job context emitted  
-3. CellGuard ingests operational evidence  
-4. SLO evaluation + xyops signals → gate locks (`HTTP 423`)  
-5. Incident created with server snapshot, workflow, alert  
-6. `healing` agent proposes + (in demo) executes xyOps remediation  
-7. xyOps completes remediation  
-8. CellGuard re-evaluates  
-9. Gate reopens  
-10. Audit trail correlates CellGuard decision + xyOps evidence + remediation
+```mermaid
+flowchart LR
+    A["xyOps runs workflow"] --> B["Latency and error degradation"]
+    B --> C["Alert, job context, and snapshot emitted"]
+    C --> D["CellGuard ingests operational evidence"]
+    D --> E["SLO evaluation with xyOps penalty"]
+    E --> F["Release gate locks: HTTP 423"]
+    F --> G["Incident created with evidence links"]
+    G --> H["Healing agent requests remediation"]
+    H --> I["xyOps remediation completes"]
+    I --> J["CellGuard re-evaluates healthy signal"]
+    J --> K["Release gate reopens: HTTP 200"]
+    K --> L["Audit trail links decision, incident, and remediation"]
+```
 
 Open the dashboard at <http://localhost:3000/dashboard> to see the Operations Fabric, rich gate evidence, and cross-system proof.
 
@@ -71,19 +75,25 @@ Open the dashboard at <http://localhost:3000/dashboard> to see the Operations Fa
 
 ## Screenshots
 
-Screenshots below showcase the **elite, /design-taste-frontend powered UI** (premium control-plane aesthetic, high visual density, consistent hierarchy, and real DB-backed xyOps evidence panels — Operations Fabric, rich Gate context on lock, and detailed Incidents xyOps Evidence).
+Screenshots below showcase the flagship redesign: **mission-control cockpit** (first-viewport command composition with gate + xyOps fabric + agents + audit), **executive product proof** on landing (live OS command strip with gate/SLO/burn/budget/xyOps/agents/audit), and **incident command** triage (clear hierarchy, prominent xyOps evidence, usable mobile collapse). All evidence is real DB-backed; open/locked states are visually distinct.
 
-### Dashboard — Mission Control
+### Landing — Executive Product Proof (first viewport)
+Live reliability OS signals above the fold (gate state, burn, budget, xyOps fabric, active agents, recent audit):
 
-Open gate (SLO compliant, deployments permitted — Operations Fabric panel visible):
+![Landing — desktop](./screenshots/landing-desktop.png)
+
+### Dashboard — Mission Control Cockpit
+Open gate (command composition: gate + fabric + agents peek + audit trail in first viewport):
 
 ![Dashboard — open](./screenshots/dashboard-open.png)
 
-Locked gate (error budget exhausted + full xyOps fabric evidence in the premium evidence block — workflow, failed job, server snapshot, alert, metrics):
+Locked gate (red danger treatment + full xyOps "CAUSE OF LOCK" evidence block):
 
 ![Dashboard — locked](./screenshots/dashboard-locked.png)
 
-### Incidents — Triage Workspace
+### Incidents — Triage / Incident Command
+Featured incident + clear sections (details, xyOps evidence, actions, SLA, activity, policy); mobile stacks as usable workflow.
+
 ![Incidents](./screenshots/incidents-desktop.png)
 
 Mobile (375×812):
@@ -93,6 +103,8 @@ Mobile (375×812):
 | ![Mobile dashboard](./screenshots/dashboard-mobile.png) | ![Mobile incidents](./screenshots/incidents-mobile.png) |
 
 ---
+
+**Regeneration:** After UI changes run `npm run screenshots`, `npm run screenshot:open`, `npm run screenshot:locked` (with server on 3000 + seeded state), plus `make go-ui-smoke`. Always inspect new PNGs with visual review before committing. See AGENTS.md for full frontend done-when + design conventions.
 
 ## Architecture (CellGuard governs xyOps)
 
@@ -134,9 +146,21 @@ flowchart TB
 | Incident response        | State, severity, runbooks, audit linkage            | Job history, server snapshots, alert context    |
 | Automation               | budget_guard, healing, incident_response, chaos     | Cross-system workflows, scheduled automation    |
 | Proof                    | "Why did the gate lock?"                            | "What was running, where, and what changed?"    |
-```
 
 **CellGuard governs xyOps.** xyOps runs the work. CellGuard makes the automations safe, SLO-aware, auditable, and release-impacting.
+
+## Functional Proof
+
+This README reflects a verified local system, not a static mockup. The proof path is:
+
+```mermaid
+flowchart LR
+    T["Rails, Go classifier, and Go runner tests"] --> S["Local stack boot"]
+    S --> G["make gameday"]
+    G --> L["Gate opens, locks at 423, then reopens"]
+    L --> U["UI smoke and screenshot regeneration"]
+    U --> R["README screenshots refreshed from generated artifacts"]
+```
 
 ---
 

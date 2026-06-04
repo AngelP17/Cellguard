@@ -134,6 +134,8 @@ module Api
         status: AgentScheduler.status,
         recent_activity: AgentScheduler.recent_activity(limit: 10)
       })
+    rescue StandardError => e
+      Rails.logger.warn("[Api::AgentsController] status broadcast skipped: #{e.class}: #{e.message}")
     end
   end
 end

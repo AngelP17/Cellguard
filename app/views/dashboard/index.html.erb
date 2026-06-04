@@ -4,7 +4,7 @@
   eyebrow: "CELLGUARD MISSION CONTROL"
 ) do %>
 
-  <div class="space-y-4" data-gsap="dashboard">
+  <div class="space-y-4 cg-cockpit cg-cockpit--<%= @budget.release_gate_open ? 'open' : 'locked' %>" data-gsap="dashboard" data-state="<%= @budget.release_gate_open ? 'open' : 'locked' %>">
     <%# Degraded dependency banner %>
     <% if @dependency_health && @dependency_health.values.any? { |v| v == :down } %>
       <%= render Ui::StateAlertComponent.new(
@@ -25,33 +25,117 @@
       last_eval_at: @budget.evaluated_at
     ) %>
 
-    <%# B. Operations Fabric — xyOps execution context (flagship) %>
-    <%= render Ui::OperationsFabricComponent.new(
-      connection: @xyops_connection,
-      workflows: @xyops_workflows,
-      alerts: @xyops_alerts,
-      recent_runs: @xyops_recent_runs,
-      latest_snapshot: @xyops_latest_snapshot,
-      linked_incidents: @xyops_linked_incidents
-    ) %>
+    <% active_agent_count = @agent_status.count { |agent| agent[:enabled] } %>
+    <% latest_incident = @incidents.first %>
+    <% latest_audit = @audit_logs.first %>
 
-    <%# C. 30-Second Demo Flow (now tells the governed automation story) %>
+    <%# B. Flagship first viewport: release decision + fabric evidence + incident/audit proof %>
+    <section class="cg-mission-deck <%= @budget.release_gate_open ? 'is-open' : 'is-locked' %>" data-gsap="mission-deck">
+      <div class="cg-mission-deck__hero">
+        <div>
+          <div class="cg-mission-deck__kicker">Release decision</div>
+          <div class="cg-mission-deck__code"><%= @budget.release_gate_open ? "200 OK" : "423 LOCKED" %></div>
+          <h2><%= @budget.release_gate_open ? "Deployments permitted by live SLO evidence." : "Deployments blocked by live operational evidence." %></h2>
+          <p>
+            <%= @budget.release_gate_open ? "The gate is open. Continue monitoring burn rate, xyOps signals, autonomous agents, and audit activity before release." : "The gate is locked. Review fabric evidence, incident context, runbook guidance, and audit trail before override." %>
+          </p>
+        </div>
+
+        <div class="cg-mission-metrics">
+          <div>
+            <span>Burn</span>
+            <strong class="<%= @budget.current_burn_rate.to_f < 1.0 ? 'is-ok' : 'is-danger' %>"><%= @budget.current_burn_rate.to_f %>x</strong>
+          </div>
+          <div>
+            <span>Budget</span>
+            <strong class="<%= @budget.budget_remaining.to_f > 0.1 ? 'is-ok' : 'is-danger' %>"><%= (@budget.budget_remaining.to_f * 100).round(2) %>%</strong>
+          </div>
+          <div>
+            <span>Agents</span>
+            <strong><%= active_agent_count %>/<%= @agent_status.size %></strong>
+          </div>
+          <div>
+            <span>Incidents</span>
+            <strong><%= @incidents.count { |i| i.status.to_s.downcase != "resolved" } %></strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="cg-cockpit-grid">
+        <div class="cg-gate-hero-wrapper">
+          <%= render Ui::GatePanelComponent.new(
+            gate_open: @budget.release_gate_open,
+            reason: (@budget.release_gate_open ? nil : "Error budget exhausted. Override requires justification + audit log."),
+            violation_started_at: @budget.violation_started_at,
+            burn_rate: @budget.current_burn_rate.to_f,
+            budget_remaining: @budget.budget_remaining.to_f,
+            active_incident: @incidents.any? { |i| i.status.to_s.downcase != "resolved" },
+            last_eval_at: @budget.evaluated_at,
+            recommended_action: (@budget.release_gate_open ? nil : "Review runbook before override"),
+            xyops: @gate_xyops
+          ) %>
+        </div>
+
+        <div class="cg-fabric-wrapper">
+          <%= render Ui::OperationsFabricComponent.new(
+            connection: @xyops_connection,
+            workflows: @xyops_workflows,
+            alerts: @xyops_alerts,
+            recent_runs: @xyops_recent_runs,
+            latest_snapshot: @xyops_latest_snapshot,
+            linked_incidents: @xyops_linked_incidents
+          ) %>
+        </div>
+
+        <div class="cg-proof-column">
+          <article class="cg-proof-panel">
+            <div class="cg-proof-panel__label">Incident command</div>
+            <% if latest_incident %>
+              <h3><%= latest_incident.title %></h3>
+              <p>
+                <%= latest_incident.status %> · <%= time_ago_in_words(latest_incident.created_at) %> ago
+                <% if latest_incident.shard&.name.present? %>
+                  · <span class="font-mono"><%= latest_incident.shard.name %></span>
+                <% end %>
+              </p>
+              <a href="/incidents" class="cg-btn cg-btn--secondary cg-btn--sm">Open Triage</a>
+            <% else %>
+              <h3>No active incidents</h3>
+              <p>Shard is clear. Global feed remains available.</p>
+            <% end %>
+          </article>
+
+          <article class="cg-proof-panel">
+            <div class="cg-proof-panel__label">Audit proof</div>
+            <% if latest_audit %>
+              <h3><%= latest_audit.action %></h3>
+              <p><%= latest_audit.actor %> · <%= time_ago_in_words(latest_audit.created_at) %> ago</p>
+              <a href="/api/audit-logs" class="cg-btn cg-btn--secondary cg-btn--sm" data-turbo="false">View Audit</a>
+            <% else %>
+              <h3>No audit entries yet</h3>
+              <p>Privileged operations write to audit_logs.</p>
+            <% end %>
+          </article>
+
+          <article class="cg-proof-panel">
+            <div class="cg-proof-panel__label">Active agents</div>
+            <div class="cg-agent-chips">
+              <% @agent_status.first(4).each do |agent| %>
+                <% name = agent[:name] || agent["name"] %>
+                <% enabled = agent[:enabled] || agent["enabled"] %>
+                <span class="<%= enabled ? 'is-ok' : 'is-muted' %>"><%= name.to_s.titleize %></span>
+              <% end %>
+            </div>
+            <p>Live via ActionCable · <%= @agent_activity.size %> recent events</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <%# C. 30-Second Demo Flow (exec story preserved below composition) %>
     <%= render Ui::DemoFlowComponent.new %>
 
-    <%# D. Release Gate Hero Panel %>
-    <%= render Ui::GatePanelComponent.new(
-      gate_open: @budget.release_gate_open,
-      reason: (@budget.release_gate_open ? nil : "Error budget exhausted. Override requires justification + audit log."),
-      violation_started_at: @budget.violation_started_at,
-      burn_rate: @budget.current_burn_rate.to_f,
-      budget_remaining: @budget.budget_remaining.to_f,
-      active_incident: @incidents.any? { |i| i.status.to_s.downcase != "resolved" },
-      last_eval_at: @budget.evaluated_at,
-      recommended_action: (@budget.release_gate_open ? nil : "Review runbook before override"),
-      xyops: @gate_xyops
-    ) %>
-
-    <%# D. Decision Timeline — full-width horizontal %>
+    <%# Decision Timeline — full-width horizontal %>
     <%= render Ui::DecisionTimelineComponent.new %>
 
     <%# E. Lower Dashboard — Dense Grid %>
@@ -98,7 +182,7 @@
     </div>
 
     <%# Row 2: Autonomous Agents — Full width for density %>
-    <div class="cg-panel" data-gsap="agent-activity">
+    <div id="agent-activity" class="cg-panel" data-gsap="agent-activity">
       <div class="cg-panel-header">
         <div class="flex items-center gap-2">
           <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>

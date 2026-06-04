@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-bundle exec rails server -p "${PORT:-3000}"
+# Prefer rbenv for local dev (consistent with Makefile and bin/run-all)
+if command -v rbenv >/dev/null 2>&1; then
+  eval "$(rbenv init - zsh 2>/dev/null || true)"
+  exec rbenv exec bundle exec rails server -p "${PORT:-3000}"
+else
+  bundle exec rails server -p "${PORT:-3000}"
+fi

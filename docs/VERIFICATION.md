@@ -2,6 +2,17 @@
 
 This document lists the exact commands, expected output, and acceptance criteria for verifying a CellGuard deployment end-to-end. Run these in order. Each step is independent and can be re-run on a live system.
 
+```mermaid
+flowchart TD
+    A["Run Rails and Go tests"] --> B["Boot local stack"]
+    B --> C["Health checks"]
+    C --> D["Game day gate proof"]
+    D --> E["UI smoke screenshot"]
+    E --> F["Browser screenshots"]
+    F --> G["Token guard checks"]
+    G --> H["Audit, metrics, and rate limit checks"]
+```
+
 ## Prerequisites
 
 - Ruby `3.3.0`, Bundler `2.5.x`
@@ -14,6 +25,14 @@ This document lists the exact commands, expected output, and acceptance criteria
 ## 1. Test suites
 
 ### Rails
+
+On machines using rbenv (recommended for this repo):
+
+```bash
+rbenv exec bundle exec rails test
+```
+
+Or simply (if your shell has rbenv shims):
 
 ```bash
 bundle exec rails test
@@ -49,7 +68,7 @@ ALLOW_DEMO_ENDPOINTS=true CLASSIFIER_STUB=true bin/run-all
 Use Ctrl-C to stop
 ```
 
-**Acceptance:** Rails web, Sidekiq worker, and scheduler all running. No Redis or Go classifier required when `CLASSIFIER_STUB=true`.
+**Acceptance:** Rails web, Sidekiq worker, and scheduler all running. `CLASSIFIER_STUB=true` removes the Go classifier dependency for local demo boot; Redis is still required for Sidekiq, ActionCable, and a fully ready stack.
 
 ## 3. Health checks
 
@@ -113,18 +132,22 @@ make go-ui-smoke
 
 Manual verification of responsive layouts. Reference artifacts (latest run):
 
+- `screenshots/landing-desktop.png` and `screenshots/landing-mobile.png` (executive product proof)
 - `screenshots/dashboard-open.png` (gate open, SLO compliant)
 - `screenshots/dashboard-locked.png` (gate locked, error budget exhausted)
 - `screenshots/dashboard-desktop.png` and `screenshots/dashboard-mobile.png` (responsive proof)
 - `screenshots/incidents-desktop.png` and `screenshots/incidents-mobile.png`
+- `screenshots/docs-desktop.png` and `screenshots/docs-mobile.png` (runbook reader proof)
 
 To regenerate after UI changes:
 
 ```bash
-node scripts/screenshot.js
+npm run screenshots
+npm run screenshot:open
+npm run screenshot:locked
 ```
 
-(The `dashboard-locked.png` requires the gate to actually be locked; force it via `make gameday` step 5, then `node scripts/screenshot-locked.js`.)
+The npm scripts seed their target state where needed. When testing a manually locked dashboard, run `make gameday` first and capture before recovery.
 
 ### Desktop (1440 x 900)
 

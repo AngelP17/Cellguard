@@ -5,8 +5,55 @@
 ) do %>
 
   <% featured = @incidents.first %>
+  <% open_count = @incidents.count { |i| i.status.to_s.downcase != "resolved" } %>
+  <% critical_count = @incidents.count { |i| (i.context&.dig("severity_assessment", "level") || i.severity_label).to_s.downcase == "critical" && i.status.to_s.downcase != "resolved" } %>
 
-  <div class="space-y-3" data-gsap="incidents-page" data-controller="incident-actions">
+  <div class="space-y-3 cg-incident-triage" data-gsap="incidents-page" data-controller="incident-actions">
+    <section class="cg-incident-command <%= critical_count.positive? ? 'is-critical' : 'is-normal' %>" data-gsap="incident-command">
+      <div class="cg-incident-command__main">
+        <div class="cg-incident-command__label">Incident command</div>
+        <% if featured %>
+          <h2><%= featured.title %></h2>
+          <p>
+            Classifier-driven triage for <span class="font-mono"><%= featured.shard&.name || "global" %></span>.
+            Release policy, xyOps evidence, runbooks, and operator action stay in one workspace.
+          </p>
+          <div class="cg-incident-command__actions">
+            <% ctx = featured.context || {} %>
+            <% if ctx["suggested_runbooks"].present? %>
+              <a href="/runbooks/<%= ctx['suggested_runbooks'].first['slug'] %>?incident_id=<%= featured.id %>" class="cg-btn cg-btn--primary">Open Runbook</a>
+            <% else %>
+              <a href="/runbooks/gameday?incident_id=<%= featured.id %>" class="cg-btn cg-btn--primary">Open Runbook</a>
+            <% end %>
+            <button type="button" class="cg-btn cg-btn--secondary" data-incident-id="<%= featured.id %>" data-action="click->incident-actions#acknowledge">Acknowledge</button>
+            <button type="button" class="cg-btn cg-btn--danger" data-incident-id="<%= featured.id %>" data-action="click->incident-actions#escalate">Escalate</button>
+          </div>
+        <% else %>
+          <h2>No incidents in the current feed</h2>
+          <p>Demo data normally keeps this workspace populated for local proof and screenshots.</p>
+        <% end %>
+      </div>
+
+      <div class="cg-incident-command__proof">
+        <div class="cg-command-stat">
+          <span>Open</span>
+          <strong><%= open_count %></strong>
+        </div>
+        <div class="cg-command-stat">
+          <span>Critical</span>
+          <strong class="<%= critical_count.positive? ? 'is-danger' : 'is-ok' %>"><%= critical_count %></strong>
+        </div>
+        <div class="cg-command-stat">
+          <span>MTTA</span>
+          <strong><%= @mtta_label %></strong>
+        </div>
+        <div class="cg-command-stat">
+          <span>MTTR</span>
+          <strong><%= @mttr_label %></strong>
+        </div>
+      </div>
+    </section>
+
     <%# Filter Bar %>
     <%= render Ui::IncidentFilterBarComponent.new %>
 
@@ -14,12 +61,12 @@
     <div class="grid grid-cols-2 md:grid-cols-4 gap-2" data-gsap="incident-metrics">
       <div class="cg-scorecard">
         <div class="cg-scorecard__label">Open</div>
-        <div class="cg-scorecard__value"><%= @incidents.count { |i| i.status.to_s.downcase != "resolved" } %></div>
+        <div class="cg-scorecard__value"><%= open_count %></div>
       </div>
       <div class="cg-scorecard">
         <div class="cg-scorecard__label">Critical</div>
         <div class="cg-scorecard__value" style="color: var(--cg-danger);">
-          <%= @incidents.count { |i| (i.context&.dig("severity_assessment", "level") || i.severity_label).to_s.downcase == "critical" && i.status.to_s.downcase != "resolved" } %>
+          <%= critical_count %>
         </div>
       </div>
       <div class="cg-scorecard">
@@ -35,7 +82,7 @@
     </div>
 
     <%# Main Workspace — Two Column %>
-    <div class="grid gap-3 md:grid-cols-3">
+    <div class="grid gap-3 md:grid-cols-3 cg-incident-workspace">
       <%# Left: Incident List %>
       <div class="md:col-span-2 space-y-2" data-gsap="incident-list">
         <% if featured %>
@@ -48,13 +95,13 @@
       </div>
 
       <%# Right: Sidebar %>
-      <div class="space-y-3" data-gsap="incident-sidebar">
+      <div class="space-y-3 cg-incident-command-sidebar" data-gsap="incident-sidebar">
         <% if featured %>
           <% ctx = featured.context || {} %>
           <% sev = ctx.dig("severity_assessment", "level").presence || featured.severity_label %>
 
           <%# Incident Details %>
-          <div class="cg-panel">
+          <div class="cg-incident-section">
             <div class="cg-panel-header">
               <div class="cg-panel-title">Incident Details</div>
             </div>
@@ -77,7 +124,7 @@
               </div>
               <div class="flex justify-between">
                 <span style="color: var(--cg-muted-dim);">Shard</span>
-                <span class="font-mono" style="color: var(--cg-text);"><%= featured.shard&.name || "n/a" %></span>
+                <span class="font-mono" style="color: var(--cg-text);"><%= featured.shard&.name || "—" %></span>
               </div>
               <div class="flex justify-between">
                 <span style="color: var(--cg-muted-dim);">Created</span>
@@ -88,7 +135,7 @@
 
           <%# xyOps Evidence (premium cross-system proof) %>
           <% if @xyops_evidence.present? %>
-            <div class="cg-panel" style="border-color: color-mix(in srgb, var(--cg-accent) 14%, var(--cg-border));">
+            <div class="cg-incident-section cg-xyops-accent">
               <div class="cg-panel-header">
                 <div class="flex items-center gap-2">
                   <%= heroicon("circle-stack", classes: "w-3.5 h-3.5 opacity-70", stroke_width: 1.75) %>
@@ -129,7 +176,7 @@
           <% end %>
 
           <%# Actions %>
-          <div class="cg-panel">
+          <div class="cg-incident-section">
             <div class="cg-panel-header">
               <div class="cg-panel-title">Actions</div>
             </div>
@@ -147,28 +194,28 @@
           </div>
 
           <%# SLA & Impact %>
-          <div class="cg-panel">
+          <div class="cg-incident-section">
             <div class="cg-panel-header">
               <div class="cg-panel-title">SLA & Impact</div>
             </div>
             <div class="p-3 space-y-2 text-xs">
               <div class="flex justify-between">
                 <span style="color: var(--cg-muted-dim);">Response SLA</span>
-                <span class="font-mono" style="color: var(--cg-text);"><%= ctx.dig("severity_assessment", "response_time_sla") || "n/a" %></span>
+                <span class="font-mono" style="color: var(--cg-text);"><%= ctx.dig("severity_assessment", "response_time_sla") || "—" %></span>
               </div>
               <div class="flex justify-between">
                 <span style="color: var(--cg-muted-dim);">Affected Scope</span>
-                <span style="color: var(--cg-text);"><%= ctx.dig("affected_scope") || "n/a" %></span>
+                <span style="color: var(--cg-text);"><%= ctx.dig("affected_scope") || "—" %></span>
               </div>
               <div class="flex justify-between">
                 <span style="color: var(--cg-muted-dim);">Classifier</span>
-                <span style="color: var(--cg-text);"><%= ctx.dig("classifier", "reason") || "n/a" %></span>
+                <span style="color: var(--cg-text);"><%= ctx.dig("classifier", "reason") || "—" %></span>
               </div>
             </div>
           </div>
 
           <%# Activity Timeline %>
-          <div class="cg-panel">
+          <div class="cg-incident-section">
             <div class="cg-panel-header">
               <div class="cg-panel-title">Activity</div>
             </div>
@@ -191,7 +238,7 @@
                 <div class="w-1.5 h-1.5 rounded-full mt-1" style="background: var(--cg-muted-dim);"></div>
                 <div>
                   <div class="text-xs" style="color: var(--cg-muted);">Awaiting operator response</div>
-                  <div class="text-xs font-mono" style="color: var(--cg-muted-dim);">n/a</div>
+                  <div class="text-xs font-mono" style="color: var(--cg-muted-dim);"><%= time_ago_in_words(featured.updated_at) rescue 'recent' %></div>
                 </div>
               </div>
               <% if ctx["notes"].present? %>
@@ -209,7 +256,7 @@
           </div>
 
           <%# Policy Context %>
-          <div class="cg-panel">
+          <div class="cg-incident-section">
             <div class="cg-panel-header">
               <div class="cg-panel-title">Policy Context</div>
             </div>

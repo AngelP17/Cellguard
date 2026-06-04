@@ -37,7 +37,8 @@ module Ui
 
     def panel_classes
       base = "cg-panel cg-glow-#{@gate_open ? 'ok' : 'danger'}"
-      base
+      state = @gate_open ? "cg-gate-panel--open" : "cg-gate-panel--locked"
+      "#{base} #{state}"
     end
 
     def lock_icon
@@ -65,7 +66,7 @@ module Ui
     end
 
     def eval_text
-      return "—" unless @last_eval_at
+      return "n/a" unless @last_eval_at
       ago = Time.current - @last_eval_at
       return "#{ago.round}s ago" if ago < 60
       return "#{(ago / 60).round}m ago" if ago < 3600

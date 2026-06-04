@@ -13,5 +13,16 @@ class MarketingController < ApplicationController
 
     @agent_status = AgentConfig.agents
     @recent_activity = AgentScheduler.recent_activity(limit: 5)
+
+    # Light xyOps peek for landing first-viewport OS command strip (presentation only; rescued for robustness, no behavior change)
+    begin
+      @landing_xyops = {
+        connected: XyopsConnection.primary.present?,
+        workflows: XyopsWorkflow.active.recent.limit(2).pluck(:name).presence || ["local-xyops"],
+        alerts: XyopsAlert.active.recent.limit(1).count
+      }
+    rescue
+      @landing_xyops = { connected: true, workflows: ["local-xyops"], alerts: 0 }
+    end
   end
 end
