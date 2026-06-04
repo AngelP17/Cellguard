@@ -1,5 +1,4 @@
-// Take "locked gate" dashboard screenshot (full xyOps fabric evidence visible in premium Gate panel)
-// for the README and the docs/VERIFICATION.md evidence.
+// Take canonical "locked gate" dashboard screenshot with xyOps fabric evidence.
 // Self-seeds the full degradation + evaluate so gate is 423 + DB-backed evidence (nightly-fulfillment-sync etc).
 
 const { chromium } = require('playwright');
@@ -16,19 +15,26 @@ function seedLocked() {
     execSync(`curl -s -X POST '${BASE}/api/inject-failures' -H 'Content-Type: application/json' -d '{"shard":"shard-default","queue":"default","minutes":5,"error_rate":0.15,"total":2000,"p95_latency_ms":650}' > /dev/null 2>&1 || true`, { stdio: 'ignore' });
     execSync(`curl -s -X POST '${BASE}/api/evaluate' -H 'Content-Type: application/json' -d '{"shard":"shard-default","window_minutes":60}' > /dev/null 2>&1 || true`, { stdio: 'ignore' });
     // Confirm via runner (ensures budget + links)
-    execSync(`cd ${__dirname}/.. && RBENV_VERSION=3.3.0 rbenv exec bundle exec rails runner '
+    const summary = execSync(`cd ${__dirname}/.. && RBENV_VERSION=3.3.0 rbenv exec bundle exec rails runner '
       b=Shard.find_by(name:"shard-default")&.error_budget;
       puts "locked_seed: open=#{b&.release_gate_open} runs=#{XyopsWorkflowRun.failed.count} snaps=#{XyopsSnapshot.count}"
     ' 2>&1 | tail -1`, { stdio: 'pipe', timeout: 30000 });
-  } catch (e) { console.log('[locked] seed note:', e.message); }
+    const check = execSync(`curl -s '${BASE}/api/release-gate/check?shard=shard-default'`, { encoding: 'utf8', timeout: 10000 });
+    const allowed = JSON.parse(check).allowed;
+    if (allowed !== false) {
+      throw new Error(`locked seed failed: expected allowed=false, got ${allowed}; ${summary.toString().trim()}`);
+    }
+  } catch (e) {
+    console.error('[locked] seed failed:', e.message);
+    process.exit(1);
+  }
 }
 
 async function waitForLockedUI(page) {
   await page.waitForLoadState('networkidle', { timeout: 18000 }).catch(() => {});
-  // Premium evidence block
-  await page.waitForSelector('text=XYOPS FABRIC EVIDENCE', { timeout: 12000, state: 'visible' }).catch(() => {});
-  await page.waitForSelector('text=423 LOCKED', { timeout: 8000, state: 'visible' }).catch(() => {});
-  await page.waitForSelector('text=nightly-fulfillment-sync', { timeout: 6000, state: 'visible' }).catch(() => {});
+  await page.waitForSelector('text=XYOPS FABRIC EVIDENCE', { timeout: 12000, state: 'visible' });
+  await page.waitForSelector('text=423 LOCKED', { timeout: 8000, state: 'visible' });
+  await page.waitForSelector('text=nightly-fulfillment-sync', { timeout: 6000, state: 'visible' });
   // Force paint of lower dense content (Hotwire, charts, long lists)
   await page.evaluate(async () => {
     window.scrollTo(0, document.body.scrollHeight || 2000);
@@ -50,5 +56,5 @@ async function waitForLockedUI(page) {
   await waitForLockedUI(page);
   await page.screenshot({ path: path.join(OUT, 'dashboard-locked.png'), fullPage: true });
   await browser.close();
-  console.log('dashboard-locked.png captured (elite locked + full xyops evidence)');
+  console.log('dashboard-locked.png captured (canonical locked state)');
 })();

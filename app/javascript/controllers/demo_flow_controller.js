@@ -76,7 +76,7 @@ export default class extends Controller {
 
   async verifyLock() {
     const data = await this.checkGate()
-    if (data.allowed) throw new Error("Gate still open — expected locked")
+    if (data.allowed) throw new Error("Gate still open - expected locked")
     return data
   }
 

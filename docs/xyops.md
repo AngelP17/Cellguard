@@ -20,10 +20,10 @@ flowchart LR
 
 `app/services/xyops/`
 
-- `client.rb` — unified interface (stub in demo, real remote later)
-- `remediation_runner.rb` — the safety-critical path. Agents request workflows; demo auto-approves, prod requires token + UI approval; every call audited.
-- `event_ingestor.rb` — turns xyops alerts/runs into CellGuard JobStat + Incident + XyopsJobLink records.
-- `simulator.rb` — deterministic synthetic xyops data for the closed-loop demo.
+- `client.rb` - unified interface (stub in demo, real remote later)
+- `remediation_runner.rb` - the safety-critical path. Agents request workflows; demo auto-approves, prod requires token + UI approval; every call audited.
+- `event_ingestor.rb` - turns xyops alerts/runs into CellGuard JobStat + Incident + XyopsJobLink records.
+- `simulator.rb` - deterministic synthetic xyops data for the closed-loop demo.
 
 ## Data model
 

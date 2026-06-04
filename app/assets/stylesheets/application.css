@@ -1,5 +1,5 @@
 /**
- * CellGuard Mission Control — Dense Cockpit Design System
+ * CellGuard Command Center - Dense Cockpit Design System
  * Serious, operational, high-density control plane UI
  */
 
@@ -23,14 +23,18 @@
   --cg-info: #38bdf8;
   --cg-info-dim: #0284c7;
 
-  /* Extended tokens for flagship command-center composition (non-breaking; fixes undefined --cg-accent in xyops panels) */
-  --cg-accent: #6366f1;
-  --cg-accent-dim: #4f46e5;
+  /* One flagship accent family: emerald for policy/governance, sky only for semantic info. */
+  --cg-accent: #22c55e;
+  --cg-accent-dim: #15803d;
+  --cg-accent-cool: #38bdf8;
   --cg-command-bg: rgba(5, 8, 20, 0.92);
   --cg-panel-dense: rgba(10, 16, 35, 0.6);
   --cg-gate-open-bg: rgba(22, 163, 74, 0.06);
   --cg-gate-locked-bg: rgba(185, 28, 28, 0.06);
-  --cg-fabric: #6366f1; /* for xyops/ops fabric distinction */
+  --cg-fabric: var(--cg-accent);
+  --cg-radius: 0.72rem;
+  --cg-radius-sm: 0.46rem;
+  --cg-radius-lg: 0.95rem;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -133,7 +137,7 @@ a:hover { text-decoration: none; }
 /* ===== PANELS ===== */
 .cg-panel {
   border: 1px solid var(--cg-border);
-  border-radius: 0.65rem;
+  border-radius: var(--cg-radius);
   background: var(--cg-surface);
   backdrop-filter: blur(10px);
   overflow: hidden;
@@ -169,7 +173,7 @@ a:hover { text-decoration: none; }
   align-items: center;
   gap: 0.35rem;
   padding: 0.25rem 0.55rem;
-  border-radius: 0.35rem;
+  border-radius: var(--cg-radius-sm);
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -227,7 +231,7 @@ a:hover { text-decoration: none; }
   background: rgba(5, 8, 20, 0.92);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--cg-border-strong);
-  border-radius: 0.65rem;
+  border-radius: var(--cg-radius);
   margin-bottom: 1rem;
   flex-wrap: wrap;
 }
@@ -1132,7 +1136,7 @@ a:hover { text-decoration: none; }
 }
 
 /* =========================================================================
-   LANDING PAGE — Premium Cinematic Design
+   LANDING PAGE - Command System Design
    ========================================================================= */
 
 .cg-shell--landing {
@@ -1433,7 +1437,7 @@ a:hover { text-decoration: none; }
   margin-top: 0.25rem;
 }
 
-/* Hero cell — large gate status */
+/* Hero cell - large gate status */
 .cg-bento__gate {
   display: flex;
   flex-direction: column;
@@ -2017,7 +2021,7 @@ a:focus-visible {
 }
 
 /* ============================================================
-   FLAGSHIP DESIGN ENHANCEMENT — COCKPIT COMPOSITION + INCIDENT COMMAND
+   FLAGSHIP DESIGN ENHANCEMENT - COCKPIT COMPOSITION + INCIDENT COMMAND
    Premium first-viewport command center (mission control / exec demo)
    Coordinated open/locked states, high evidence density, mobile triage
    ============================================================ */
@@ -2126,7 +2130,7 @@ a:focus-visible {
   border-color: color-mix(in srgb, var(--cg-accent) 16%, var(--cg-border));
 }
 
-/* Incident command / triage workspace enhancements */
+/* Incident triage workspace enhancements */
 .cg-incident-triage .cg-incident.is-featured {
   border-width: 1.5px;
   box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.12);
@@ -2328,7 +2332,7 @@ a:focus-visible {
 
 .cg-exec-hero__proof {
   border: 1px solid var(--cg-line-bright);
-  border-radius: 0.9rem;
+  border-radius: var(--cg-radius-lg);
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.045), transparent 35%),
     linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(5, 8, 20, 0.96));
@@ -2360,8 +2364,8 @@ a:focus-visible {
   letter-spacing: 0;
 }
 
-.cg-gate-orb.is-open .cg-gate-orb__code { color: #4ade80; }
-.cg-gate-orb.is-locked .cg-gate-orb__code { color: #f87171; }
+.cg-gate-orb.is-open .cg-gate-orb__code { color: var(--cg-ok); }
+.cg-gate-orb.is-locked .cg-gate-orb__code { color: var(--cg-danger); }
 
 .cg-gate-orb__label {
   margin-top: 0.65rem;
@@ -2470,7 +2474,7 @@ a:focus-visible {
 .cg-system-cell,
 .cg-live-activity {
   border: 1px solid var(--cg-line);
-  border-radius: 0.75rem;
+  border-radius: var(--cg-radius);
   background: rgba(10, 16, 35, 0.72);
   padding: 1.15rem;
 }
@@ -2556,13 +2560,13 @@ a:focus-visible {
 }
 
 .cg-command-bar {
-  border-radius: 0.85rem;
+  border-radius: var(--cg-radius-lg);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
 }
 
 .cg-mission-deck {
   border: 1px solid var(--cg-line-bright);
-  border-radius: 0.95rem;
+  border-radius: var(--cg-radius-lg);
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.045), transparent 32%),
     linear-gradient(180deg, rgba(9, 14, 29, 0.96), rgba(5, 8, 20, 0.98));
@@ -2598,8 +2602,8 @@ a:focus-visible {
   font-weight: 900;
 }
 
-.cg-mission-deck.is-open .cg-mission-deck__code { color: #4ade80; }
-.cg-mission-deck.is-locked .cg-mission-deck__code { color: #f87171; }
+.cg-mission-deck.is-open .cg-mission-deck__code { color: var(--cg-ok); }
+.cg-mission-deck.is-locked .cg-mission-deck__code { color: var(--cg-danger); }
 
 .cg-mission-deck__hero h2 {
   max-width: 44rem;
@@ -2628,7 +2632,7 @@ a:focus-visible {
 .cg-mission-metrics > div,
 .cg-command-stat {
   border: 1px solid var(--cg-line);
-  border-radius: 0.55rem;
+  border-radius: var(--cg-radius-sm);
   background: rgba(0, 0, 0, 0.18);
   padding: 0.85rem;
   min-height: 6rem;
@@ -2738,7 +2742,7 @@ a:focus-visible {
 
 .cg-agent-chips span {
   border: 1px solid var(--cg-line);
-  border-radius: 0.35rem;
+  border-radius: var(--cg-radius-sm);
   background: rgba(0, 0, 0, 0.16);
   padding: 0.28rem 0.45rem;
   font-size: 0.7rem;
@@ -2752,9 +2756,9 @@ a:focus-visible {
   align-items: stretch;
   padding: clamp(1rem, 2vw, 1.35rem);
   border: 1px solid var(--cg-line-bright);
-  border-radius: 0.95rem;
+  border-radius: var(--cg-radius-lg);
   background:
-    linear-gradient(135deg, rgba(56, 189, 248, 0.08), transparent 38%),
+    linear-gradient(135deg, rgba(34, 197, 94, 0.075), transparent 38%),
     linear-gradient(180deg, rgba(10, 16, 35, 0.94), rgba(5, 8, 20, 0.96));
   box-shadow: var(--cg-shadow-strong);
 }
@@ -2764,6 +2768,16 @@ a:focus-visible {
   background:
     linear-gradient(135deg, rgba(239, 68, 68, 0.1), transparent 40%),
     linear-gradient(180deg, rgba(10, 16, 35, 0.94), rgba(5, 8, 20, 0.96));
+}
+
+.cg-system-surface,
+.cg-exec-hero,
+.cg-mission-deck,
+.cg-incident-command,
+.cg-live-activity,
+.cg-panel,
+.cg-system-cell {
+  color-scheme: dark;
 }
 
 .cg-incident-command__main h2 {

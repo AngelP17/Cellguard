@@ -137,9 +137,9 @@ The `web` container speaks plain HTTP on port 3000. Put it behind nginx, Caddy, 
 
 The container writes to:
 
-- `/rails/log` — application logs (mount a volume or ship to stdout)
-- `/rails/tmp` — Sidekiq tmp files
-- `/rails/storage` — Active Storage (only if you enable it)
+- `/rails/log` - application logs (mount a volume or ship to stdout)
+- `/rails/tmp` - Sidekiq tmp files
+- `/rails/storage` - Active Storage (only if you enable it)
 
 ## Health check
 

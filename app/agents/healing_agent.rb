@@ -152,7 +152,7 @@ module Agents
         }
       end
 
-      # Strategy 3 (elite): Trigger xyOps remediation workflow for the failing fabric job
+      # Strategy 3 (flagship): Trigger xyOps remediation workflow for the failing fabric job
       if assessment[:gate_status] == :locked && defined?(Xyops::RemediationRunner)
         return {
           type: :xyops_remediation,

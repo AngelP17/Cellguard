@@ -6,7 +6,7 @@
 
 **CellGuard turns xyOps from an automation platform into a governed reliability system.**
 
-In flagship mode, CellGuard runs on top of **xyOps** — your local execution fabric for jobs, workflows, monitoring, alerting, and automation. xyOps executes and observes. CellGuard decides what is safe, enforces policy, triggers remediation, and proves every action.
+In flagship mode, CellGuard runs on top of **xyOps**, your local execution fabric for jobs, workflows, monitoring, alerting, and automation. xyOps executes and observes. CellGuard decides what is safe, enforces policy, triggers remediation, and proves every action.
 
 Together they form a complete, zero-cost, self-hosted reliability operating system.
 
@@ -37,7 +37,7 @@ ALLOW_DEMO_ENDPOINTS=true CLASSIFIER_STUB=true bin/run-all
 Then:
 
 ```bash
-# Full gameday (xyOps fabric degradation → CellGuard ingests context → 423 lock → healing triggers xyOps remediation → gate reopens + full audit)
+# Full gameday: xyOps degradation, CellGuard context, 423 lock, remediation, reopen, audit
 make gameday
 ```
 
@@ -67,7 +67,7 @@ Open the dashboard at <http://localhost:3000/dashboard> to see the Operations Fa
 | Path | Purpose |
 |------|---------|
 | `/` | Landing page with live gate snapshot |
-| `/dashboard` | Mission Control dashboard |
+| `/dashboard` | Command dashboard |
 | `/incidents` | Incident triage workspace |
 | `/runbooks/:slug` | Runbook viewer |
 
@@ -75,24 +75,25 @@ Open the dashboard at <http://localhost:3000/dashboard> to see the Operations Fa
 
 ## Screenshots
 
-Screenshots below showcase the flagship redesign: **mission-control cockpit** (first-viewport command composition with gate + xyOps fabric + agents + audit), **executive product proof** on landing (live OS command strip with gate/SLO/burn/budget/xyOps/agents/audit), and **incident command** triage (clear hierarchy, prominent xyOps evidence, usable mobile collapse). All evidence is real DB-backed; open/locked states are visually distinct.
+Screenshots below use one command-system language: the same dark control-plane palette, emerald governance accent, red locked state, mono evidence, compact panels, and DB-backed xyOps proof. The set is intentionally small so the README shows one coherent product, not a gallery of unrelated states.
 
-### Landing — Executive Product Proof (first viewport)
-Live reliability OS signals above the fold (gate state, burn, budget, xyOps fabric, active agents, recent audit):
+### Landing: Product Proof
+Live reliability OS signals above the fold: gate state, burn, budget, xyOps fabric, active agents, and audit.
 
-![Landing — desktop](./screenshots/landing-desktop.png)
+![Landing desktop](./screenshots/landing-desktop.png)
 
-### Dashboard — Mission Control Cockpit
-Open gate (command composition: gate + fabric + agents peek + audit trail in first viewport):
+### Dashboard: Open Gate
+Command cockpit with release gate, fabric evidence, agent status, and audit context in one viewport.
 
-![Dashboard — open](./screenshots/dashboard-open.png)
+![Dashboard open](./screenshots/dashboard-open.png)
 
-Locked gate (red danger treatment + full xyOps "CAUSE OF LOCK" evidence block):
+### Dashboard: Locked Gate
+The same cockpit in the blocked state, with red policy treatment and xyOps cause-of-lock evidence.
 
-![Dashboard — locked](./screenshots/dashboard-locked.png)
+![Dashboard locked](./screenshots/dashboard-locked.png)
 
-### Incidents — Triage / Incident Command
-Featured incident + clear sections (details, xyOps evidence, actions, SLA, activity, policy); mobile stacks as usable workflow.
+### Incidents: Triage
+Featured incident, xyOps evidence, runbook actions, SLA impact, lifecycle activity, and policy context.
 
 ![Incidents](./screenshots/incidents-desktop.png)
 
@@ -104,7 +105,7 @@ Mobile (375×812):
 
 ---
 
-**Regeneration:** After UI changes run `npm run screenshots`, `npm run screenshot:open`, `npm run screenshot:locked` (with server on 3000 + seeded state), plus `make go-ui-smoke`. Always inspect new PNGs with visual review before committing. See AGENTS.md for full frontend done-when + design conventions.
+**Regeneration:** After UI changes run `npm run screenshot:open`, `npm run screenshot:locked`, `npm run screenshots`, plus `make go-ui-smoke`. `screenshot:open` owns `dashboard-open.png` and `dashboard-mobile.png`; `screenshot:locked` owns `dashboard-locked.png`; `screenshots` owns landing and incidents. Always inspect new PNGs before committing. See AGENTS.md for frontend done-when criteria.
 
 ## Architecture (CellGuard governs xyOps)
 
@@ -112,8 +113,8 @@ Mobile (375×812):
 flowchart TB
     subgraph UI["CellGuard UI (Hotwire)"]
         direction TB
-        D["Dashboard • Release Gate (with xyops evidence) • Agents"]
-        I["Incidents (xyops panel) • Audit (cross-system)"]
+        D["Dashboard, Release Gate with xyOps evidence, Agents"]
+        I["Incidents with xyOps panel, Audit cross-system"]
     end
 
     subgraph CP["CellGuard Control Plane"]
@@ -125,7 +126,7 @@ flowchart TB
     end
 
     subgraph XY["xyOps Execution Fabric"]
-        WF["Jobs • Workflows • Monitoring • Alerts • Snapshots"]
+        WF["Jobs, Workflows, Monitoring, Alerts, Snapshots"]
         NOTE["(simulated in demo via Xyops::Simulator; real self-hosted in prod)"]
     end
 
@@ -312,10 +313,10 @@ curl -s http://localhost:3000/api/status    # detailed status with version
 
 ## Documentation
 
-- [AGENTS.md](./AGENTS.md) — Architecture, commands, safety model, done-when criteria
-- [docs/AGENTS.md](./docs/AGENTS.md) — Agent runtime contract
-- [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) — Production Docker deployment
-- [docs/runbooks/](./docs/runbooks/) — Operational runbooks (gameday, etc.)
+- [AGENTS.md](./AGENTS.md) - Architecture, commands, safety model, done-when criteria
+- [docs/AGENTS.md](./docs/AGENTS.md) - Agent runtime contract
+- [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) - Production Docker deployment
+- [docs/runbooks/](./docs/runbooks/) - Operational runbooks (gameday, etc.)
 
 ---
 

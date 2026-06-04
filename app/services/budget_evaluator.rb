@@ -43,7 +43,7 @@ class BudgetEvaluator
       crit_alerts = XyopsAlert.critical.active.where("fired_at >= ?", 20.minutes.ago).count
       xyops_penalty += 0.12 if crit_alerts > 0 && !recent_remed_success
     rescue StandardError
-      # Simulator not present or tables missing in some envs — fail closed (no penalty)
+      # Simulator not present or tables missing in some envs - fail closed (no penalty)
       xyops_penalty = 0.0
     end
 

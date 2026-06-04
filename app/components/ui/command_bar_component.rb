@@ -29,7 +29,7 @@ module Ui
     end
 
     def eval_text
-      return "—" unless @last_eval_at
+      return "n/a" unless @last_eval_at
       ago = Time.current - @last_eval_at
       return "#{ago.round}s ago" if ago < 60
       return "#{(ago / 60).round}m ago" if ago < 3600

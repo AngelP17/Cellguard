@@ -1,7 +1,7 @@
 <%= render Ui::ShellComponent.new(
   title: "Incidents",
   subtitle: "Classifier-driven incident triage workspace",
-  eyebrow: "TRIAGE WORKSPACE"
+  eyebrow: "CELLGUARD COMMAND CENTER"
 ) do %>
 
   <% featured = @incidents.first %>
@@ -11,7 +11,7 @@
   <div class="space-y-3 cg-incident-triage" data-gsap="incidents-page" data-controller="incident-actions">
     <section class="cg-incident-command <%= critical_count.positive? ? 'is-critical' : 'is-normal' %>" data-gsap="incident-command">
       <div class="cg-incident-command__main">
-        <div class="cg-incident-command__label">Incident command</div>
+        <div class="cg-incident-command__label">Triage context</div>
         <% if featured %>
           <h2><%= featured.title %></h2>
           <p>
@@ -57,7 +57,7 @@
     <%# Filter Bar %>
     <%= render Ui::IncidentFilterBarComponent.new %>
 
-    <%# Metrics Row — horizontal %>
+    <%# Metrics Row - horizontal %>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-2" data-gsap="incident-metrics">
       <div class="cg-scorecard">
         <div class="cg-scorecard__label">Open</div>
@@ -81,7 +81,7 @@
       </div>
     </div>
 
-    <%# Main Workspace — Two Column %>
+    <%# Main Workspace - Two Column %>
     <div class="grid gap-3 md:grid-cols-3 cg-incident-workspace">
       <%# Left: Incident List %>
       <div class="md:col-span-2 space-y-2" data-gsap="incident-list">
@@ -124,7 +124,7 @@
               </div>
               <div class="flex justify-between">
                 <span style="color: var(--cg-muted-dim);">Shard</span>
-                <span class="font-mono" style="color: var(--cg-text);"><%= featured.shard&.name || "—" %></span>
+                <span class="font-mono" style="color: var(--cg-text);"><%= featured.shard&.name || "n/a" %></span>
               </div>
               <div class="flex justify-between">
                 <span style="color: var(--cg-muted-dim);">Created</span>
@@ -159,7 +159,7 @@
                 <% if @xyops_evidence[:snapshot] %>
                   <div class="pt-1.5 mt-1 border-t text-[10px] font-mono flex items-center gap-2" style="border-color: var(--cg-border); color: var(--cg-muted);">
                     <%= heroicon("camera", classes: "w-3 h-3", stroke_width: 2) %>
-                    <span>cpu <%= @xyops_evidence[:snapshot][:cpu] || @xyops_evidence[:snapshot]["cpu"] || @xyops_evidence[:snapshot][:cpu_pct] %>% · redis <%= @xyops_evidence[:snapshot][:redis_ms] || @xyops_evidence[:snapshot]["redis_ms"] %>ms</span>
+                    <span>cpu <%= @xyops_evidence[:snapshot][:cpu] || @xyops_evidence[:snapshot]["cpu"] || @xyops_evidence[:snapshot][:cpu_pct] %>% | redis <%= @xyops_evidence[:snapshot][:redis_ms] || @xyops_evidence[:snapshot]["redis_ms"] %>ms</span>
                   </div>
                 <% end %>
                 <div class="pt-1">
@@ -201,15 +201,15 @@
             <div class="p-3 space-y-2 text-xs">
               <div class="flex justify-between">
                 <span style="color: var(--cg-muted-dim);">Response SLA</span>
-                <span class="font-mono" style="color: var(--cg-text);"><%= ctx.dig("severity_assessment", "response_time_sla") || "—" %></span>
+                <span class="font-mono" style="color: var(--cg-text);"><%= ctx.dig("severity_assessment", "response_time_sla") || "n/a" %></span>
               </div>
               <div class="flex justify-between">
                 <span style="color: var(--cg-muted-dim);">Affected Scope</span>
-                <span style="color: var(--cg-text);"><%= ctx.dig("affected_scope") || "—" %></span>
+                <span style="color: var(--cg-text);"><%= ctx.dig("affected_scope") || "n/a" %></span>
               </div>
               <div class="flex justify-between">
                 <span style="color: var(--cg-muted-dim);">Classifier</span>
-                <span style="color: var(--cg-text);"><%= ctx.dig("classifier", "reason") || "—" %></span>
+                <span style="color: var(--cg-text);"><%= ctx.dig("classifier", "reason") || "n/a" %></span>
               </div>
             </div>
           </div>
@@ -247,7 +247,7 @@
                     <div class="w-1.5 h-1.5 rounded-full mt-1" style="background: var(--cg-ok);"></div>
                     <div>
                       <div class="text-xs" style="color: var(--cg-text);"><%= note["text"] || note[:text] %></div>
-                      <div class="text-xs font-mono" style="color: var(--cg-muted-dim);"><%= note["actor"] || note[:actor] %> · <%= time_ago_in_words(note["created_at"] || note[:created_at]) %> ago</div>
+                      <div class="text-xs font-mono" style="color: var(--cg-muted-dim);"><%= note["actor"] || note[:actor] %> | <%= time_ago_in_words(note["created_at"] || note[:created_at]) %> ago</div>
                     </div>
                   </div>
                 <% end %>

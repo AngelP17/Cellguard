@@ -2,7 +2,7 @@
 
 module Xyops
   # Xyops::RemediationRunner
-  # The elite safety layer. CellGuard agents (healing) request xyOps to run remediation workflows,
+  # The flagship safety layer. CellGuard agents (healing) request xyOps to run remediation workflows,
   # but only after explicit approval, in demo/safety mode, and every action is audited.
   #
   # This is what turns "CellGuard detects" into the closed loop:

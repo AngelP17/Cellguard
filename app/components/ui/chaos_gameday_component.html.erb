@@ -12,7 +12,7 @@
     <% if has_reasons? %>
       <ul class="mt-2 space-y-1 text-xs text-neutral-400">
         <% Array(@chaos_insight[:reasons]).first(3).each do |reason| %>
-          <li>• <%= reason %></li>
+          <li><%= reason %></li>
         <% end %>
       </ul>
     <% end %>
@@ -24,7 +24,7 @@
         Last run: <span class="text-neutral-300">none</span>
       <% end %>
       <% if @chaos_insight[:drill_rationale].present? %>
-        • Rationale: <span class="text-neutral-300"><%= @chaos_insight[:drill_rationale] %></span>
+        Rationale: <span class="text-neutral-300"><%= @chaos_insight[:drill_rationale] %></span>
       <% end %>
     </div>
   </div>

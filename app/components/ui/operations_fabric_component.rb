@@ -36,7 +36,7 @@ module Ui
         "#{@workflows.size} workflows",
         "#{active_alert_count} active alerts",
         "#{@recent_runs.size} recent runs"
-      ].join(" · ")
+      ].join(" | ")
     end
   end
 end

@@ -86,10 +86,10 @@ flowchart TB
 
 The four canonical agents are the API and persistence contract (`agent_executions.agent_name`, `/api/agents/:name/*`, `AgentScheduler`):
 
-- `budget_guard` — monitors error budget burn rate, predicts exhaustion
-- `chaos_orchestrator` — schedules controlled failure drills when safety checks pass
-- `incident_response` — auto-suggests runbooks for new incidents
-- `healing` — attempts low-risk recovery actions with auditability
+- `budget_guard` - monitors error budget burn rate, predicts exhaustion
+- `chaos_orchestrator` - schedules controlled failure drills when safety checks pass
+- `incident_response` - auto-suggests runbooks for new incidents
+- `healing` - attempts low-risk recovery actions with auditability
 
 ## Safety model
 
@@ -164,23 +164,23 @@ Precedence: persisted `agent_configs` row → environment variable → DEFAULTS.
 Channel: `AgentActivityChannel`
 
 Event families:
-- `initial_state` — sent on subscribe
-- `agent_triggered` — an agent run started
-- `agent_error` — an agent run failed
-- `status_update` — agent status or activity feed changed
+- `initial_state` - sent on subscribe
+- `agent_triggered` - an agent run started
+- `agent_error` - an agent run failed
+- `status_update` - agent status or activity feed changed
 - Activity stream events with `agent`, `shard`, `status`, `action`, `created_at`
 
 ## Data contract
 
 ### Tables
 
-- `agent_executions` — runtime history and outcomes per agent
-- `agent_configs` — mutable runtime overrides for agent toggles
-- `audit_logs` — immutable audit trail of privileged operations
-- `incidents` — classifier-driven incident records
-- `error_budgets` — per-shard SLO budget state
-- `job_stats` — ingested operational metrics
-- `shards` — logical deploy units
+- `agent_executions` - runtime history and outcomes per agent
+- `agent_configs` - mutable runtime overrides for agent toggles
+- `audit_logs` - immutable audit trail of privileged operations
+- `incidents` - classifier-driven incident records
+- `error_budgets` - per-shard SLO budget state
+- `job_stats` - ingested operational metrics
+- `shards` - logical deploy units
 
 ### Agent execution record fields
 
@@ -280,12 +280,12 @@ curl -X POST http://localhost:3000/api/agents/chaos_orchestrator/toggle \
 
 ## Files to avoid
 
-- `tmp/` — runtime artifacts, never edit
-- `log/` — runtime logs, never edit
-- `storage/` — Active Storage (unused by default)
-- `vendor/bundle/` — bundled gems
-- `node_modules/` — JS deps
-- `screenshots/` — generated evidence
+- `tmp/` - runtime artifacts, never edit
+- `log/` - runtime logs, never edit
+- `storage/` - Active Storage (unused by default)
+- `vendor/bundle/` - bundled gems
+- `node_modules/` - JS deps
+- `screenshots/` - generated evidence
 
 ## Design & Frontend Conventions (flagship mission control / exec demo / incident command)
 
@@ -296,13 +296,13 @@ The visible product experience must credibly read as **mission control** (dashbo
 - `/dashboard` uses **command composition grid** (not pure vertical stack of panels) for first viewport: release gate (large), xyOps/ops fabric, active agents, audit trail visible together + command bar. Lower content (demo flow, full agents, scorecards, chaos, recent lists) preserved for complete operator journey.
 - Open vs locked states are **visually distinct and screenshot-worthy**: green calm/permissioned (tints, glows, 200 dominant) vs red urgent (pulses, danger accents, full "CAUSE OF LOCK" xyOps evidence block emphasized).
 - `/incidents` gives featured incident + xyOps evidence + runbook/action/SLA/timeline **clear visual hierarchy** in sidebar; mobile collapses to usable triage stack (list then sections), not long dark boxes.
-- **Tokens (source of truth in `application.css` :root)**: --cg-bg #050814, --cg-surface rgba(12,20,40,0.82), --cg-border rgba(100,116,139,0.18), --cg-text #e2e8f0, --cg-ok #22c55e, --cg-danger #ef4444, --cg-info #38bdf8, --cg-accent #22c55e, --cg-accent-cool #38bdf8, --cg-line rgba(148,163,184,0.18). Typography: Geist body, JetBrains Mono for all metrics/codes/evidence. Radii 0.45-0.95rem, dense padding 0.5-1.35rem, subtle blur + linear evidence grids. Never generic dark cards.
+- **Tokens (source of truth in `application.css` :root)**: --cg-bg #050814, --cg-surface rgba(12,20,40,0.82), --cg-border rgba(100,116,139,0.18), --cg-text #e2e8f0, --cg-ok #22c55e, --cg-danger #ef4444, --cg-info #38bdf8, --cg-accent #22c55e, --cg-accent-cool #38bdf8, --cg-line rgba(148,163,184,0.18). Typography: Geist body, JetBrains Mono for all metrics/codes/evidence. Radii use the shared --cg-radius scale. Dense padding 0.5-1.35rem, subtle blur, and linear evidence grids. Never generic dark cards, indigo accents, or route-specific palettes.
 - **No new frameworks.** Rails + Hotwire + ViewComponent + Stimulus + custom .cg-* CSS only. Prefer edits to page views + component templates + CSS + tiny presentation Stimulus.
 - **Data:** sourced from existing controller instance variables (minimal ivar adds for presentation data only; no behavior/logic changes). Never-empty via DemoDataService.
 - **Preserve exactly:** all actions (run eval/gameday/heal/override/agent toggle/run, incident ack/resolve/escalate/note, demo steps, chaos buttons), WS feeds, modals, audit on mutations, token guards (bypass in demo), gate 200/423 semantics.
 - **Icons:** expand `heroicons_helper.rb` (inline SVG) when new evidence panels need them; no gem.
 - **Motion:** existing CSS + data-gsap (shell); respect reduced-motion. No new libs.
-- **Screenshots (generated evidence, replace only after verification):** `npm run screenshots` (landing/dashboard/incidents/docs, desktop+mobile), `npm run screenshot:open`, `npm run screenshot:locked` (self-seed + capture), `make go-ui-smoke` (tmp/ui-dashboard.png). BASE_URL=http://127.0.0.1:3000 when needed. Always run against seeded state (gameday/reset for locked/open).
+- **Screenshots (generated evidence, replace only after verification):** `npm run screenshot:open` owns `screenshots/dashboard-open.png` and `screenshots/dashboard-mobile.png`; `npm run screenshot:locked` owns `screenshots/dashboard-locked.png`; `npm run screenshots` owns landing and incidents desktop/mobile only; `make go-ui-smoke` writes `tmp/ui-dashboard.png`. BASE_URL=http://127.0.0.1:3000 when needed. Never let a generic dashboard capture overwrite canonical open/locked evidence.
 - **Visual inspection (mandatory before docs update):** use `view_image` on `screenshots/*.png` and `tmp/ui-*.png`. Verify: first viewport signals/composition present, open vs locked distinct, no overlap/cut text/unreadable controls/empty flagship panels, mobile usable (no h-scroll, touch targets), matches accepted design targets (session images from planning or equivalent), high evidence density but scannable.
 - Update `README.md` (screenshots section text only) and this `AGENTS.md` **only after** new screenshots pass inspection + tests/gameday.
 

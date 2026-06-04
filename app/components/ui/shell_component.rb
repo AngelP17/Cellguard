@@ -2,7 +2,7 @@ module Ui
   class ShellComponent < ViewComponent::Base
     include HeroiconsHelper
 
-    def initialize(title:, subtitle: nil, eyebrow: "CELLGUARD MISSION CONTROL", variant: :default)
+    def initialize(title:, subtitle: nil, eyebrow: "CELLGUARD COMMAND CENTER", variant: :default)
       @title = title
       @subtitle = subtitle
       @eyebrow = eyebrow

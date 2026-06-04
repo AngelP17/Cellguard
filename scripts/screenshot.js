@@ -1,8 +1,7 @@
-// Take dashboard, incidents, landing, and docs screenshots
+// Take canonical landing and incidents screenshots
 // at desktop (1440x900) and mobile (375x812) viewports.
-// Robust waits for premium DB-backed UI (Operations Fabric, xyOps Evidence, Gate panels).
+// Dashboard state screenshots are owned by screenshot-open.js and screenshot-locked.js.
 // Use: BASE_URL=http://127.0.0.1:3456 node scripts/screenshot.js
-// Pre-seed locked state with: make reset-demo && curl .../inject-failures && curl .../evaluate
 
 const { chromium } = require('playwright');
 const path = require('path');
@@ -13,11 +12,35 @@ const BASE = process.env.BASE_URL || 'http://127.0.0.1:3456';
 const OUT = path.resolve(__dirname, '..', 'screenshots');
 
 const TARGETS = [
-  { name: 'dashboard', url: '/dashboard', waitFor: 'text=Operations Fabric' },
   { name: 'incidents', url: '/incidents', waitFor: 'text=xyOps Evidence' },
-  { name: 'landing', url: '/', waitFor: 'text=CellGuard' },
-  { name: 'docs', url: '/runbooks/gameday', waitFor: 'text=Game Day' }
+  { name: 'landing', url: '/', waitFor: 'text=CellGuard' }
 ];
+
+function seedOpenState() {
+  console.log('[screenshots] ensuring open gate with xyOps evidence for landing and incidents...');
+  try {
+    execSync(`cd ${__dirname}/.. && RBENV_VERSION=3.3.0 rbenv exec bundle exec rails runner '
+      shard=Shard.find_or_create_by!(name:"shard-default");
+      Xyops::Simulator.reset! rescue nil;
+      JobStat.where(shard: shard).delete_all;
+      XyopsAlert.delete_all rescue nil;
+      XyopsWorkflowRun.delete_all rescue nil;
+      XyopsSnapshot.delete_all rescue nil;
+      b=shard.error_budget || shard.build_error_budget;
+      b.update!(budget_consumed:0.0, budget_remaining:1.0, current_burn_rate:0.0, release_gate_open:true, violation_started_at:nil, evaluated_at:Time.current);
+      puts "seeded open: gate=#{b.release_gate_open}"
+    ' 2>&1 | tail -1`, { stdio: 'pipe', timeout: 30000 });
+    execSync(`curl -s -X POST '${BASE}/api/inject-failures' -H 'Content-Type: application/json' -d '{"shard":"shard-default","queue":"default","minutes":5,"error_rate":0.15,"total":2000,"p95_latency_ms":650}' > /dev/null 2>&1 || true`, { stdio: 'ignore', timeout: 10000 });
+    execSync(`cd ${__dirname}/.. && RBENV_VERSION=3.3.0 rbenv exec bundle exec rails runner '
+      shard=Shard.find_by!(name:"shard-default");
+      b=shard.error_budget;
+      b.update!(budget_consumed:0.0, budget_remaining:1.0, current_burn_rate:0.0, release_gate_open:true, violation_started_at:nil, evaluated_at:Time.current);
+      puts "seeded evidence with open gate"
+    ' 2>&1 | tail -1`, { stdio: 'pipe', timeout: 30000 });
+  } catch (e) {
+    console.log('[screenshots] open seed note:', e.message);
+  }
+}
 
 async function waitForPremiumUI(page, waitForText) {
   // Core load + network
@@ -50,7 +73,7 @@ async function shoot(viewport, label) {
   });
   const page = await context.newPage();
 
-  // Surface console errors from page (helps debug "other errors from the images")
+  // Surface console errors from page.
   page.on('console', msg => { if (msg.type() === 'error') console.error(`[page:${label}] ${msg.text()}`); });
   page.on('pageerror', err => console.error(`[pageerr:${label}] ${err.message}`));
 
@@ -60,8 +83,7 @@ async function shoot(viewport, label) {
     try {
       await page.goto(BASE + t.url, { waitUntil: 'domcontentloaded', timeout: 30000 });
       await waitForPremiumUI(page, t.waitFor);
-      // For dashboard/incidents, scroll a bit to ensure lower panels paint (dense UI)
-      if (t.name === 'dashboard' || t.name === 'incidents') {
+      if (t.name === 'incidents') {
         await page.evaluate(() => window.scrollBy(0, 120));
         await page.waitForTimeout(400);
         await page.evaluate(() => window.scrollTo(0, 0));
@@ -84,8 +106,9 @@ async function shoot(viewport, label) {
 
 (async () => {
   fs.mkdirSync(OUT, { recursive: true });
-  console.log(`Screenshots targeting ${BASE} (ensure demo server + seeded state for locked evidence)`);
-  await shoot({ width: 1440, height: 1200 }, 'desktop');  // taller to fit dense premium panels + full gate xyops evidence
+  seedOpenState();
+  console.log(`Screenshots targeting ${BASE}`);
+  await shoot({ width: 1440, height: 1200 }, 'desktop');
   await shoot({ width: 375, height: 900 }, 'mobile');
   console.log('done');
 })();

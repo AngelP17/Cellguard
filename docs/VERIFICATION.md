@@ -135,9 +135,8 @@ Manual verification of responsive layouts. Reference artifacts (latest run):
 - `screenshots/landing-desktop.png` and `screenshots/landing-mobile.png` (executive product proof)
 - `screenshots/dashboard-open.png` (gate open, SLO compliant)
 - `screenshots/dashboard-locked.png` (gate locked, error budget exhausted)
-- `screenshots/dashboard-desktop.png` and `screenshots/dashboard-mobile.png` (responsive proof)
+- `screenshots/dashboard-mobile.png` (mobile open-gate command cockpit)
 - `screenshots/incidents-desktop.png` and `screenshots/incidents-mobile.png`
-- `screenshots/docs-desktop.png` and `screenshots/docs-mobile.png` (runbook reader proof)
 
 To regenerate after UI changes:
 
@@ -147,7 +146,7 @@ npm run screenshot:open
 npm run screenshot:locked
 ```
 
-The npm scripts seed their target state where needed. When testing a manually locked dashboard, run `make gameday` first and capture before recovery.
+The npm scripts seed their target state where needed. `screenshot:open` owns open dashboard desktop and mobile, `screenshot:locked` owns locked dashboard, and `screenshots` owns landing and incidents. When testing a manually locked dashboard, run `make gameday` first and capture before recovery.
 
 ### Desktop (1440 x 900)
 
@@ -163,7 +162,7 @@ open http://localhost:3000/runbooks/gameday
 - Gate panel shows clear `OPEN` / `LOCKED` state with color differentiation
 - Recent Incidents and Audit Trail panels populated
 - No empty-state messages
-- No raw em-dashes in visible text (search for `—` in the rendered page)
+- No raw em-dashes in visible text (search for `-` in the rendered page)
 
 ### Mobile (375 x 812)
 

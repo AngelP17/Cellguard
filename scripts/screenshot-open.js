@@ -1,5 +1,4 @@
-// Take an "open gate" dashboard screenshot (Operations Fabric + open gate panel visible)
-// for the README and the docs/VERIFICATION.md evidence.
+// Take canonical "open gate" dashboard screenshots for README evidence.
 // Self-seeds a clean open state (no fabric degradation) before capture.
 
 const { chromium } = require('playwright');
@@ -19,6 +18,10 @@ function seedOpen() {
     execSync(`cd ${__dirname}/.. && RBENV_VERSION=3.3.0 rbenv exec bundle exec rails runner '
       shard=Shard.find_or_create_by!(name:"shard-default");
       Xyops::Simulator.reset! rescue nil;
+      JobStat.where(shard: shard).delete_all;
+      XyopsAlert.delete_all rescue nil;
+      XyopsWorkflowRun.delete_all rescue nil;
+      XyopsSnapshot.delete_all rescue nil;
       b=shard.error_budget || shard.build_error_budget;
       b.update!(budget_consumed:0.0, budget_remaining:1.0, current_burn_rate:0.0, release_gate_open:true, violation_started_at:nil, evaluated_at:Time.current);
       puts "seeded open: gate=#{b.release_gate_open}"
@@ -50,6 +53,10 @@ async function waitForOpenUI(page) {
   await page.goto(BASE + '/dashboard', { waitUntil: 'domcontentloaded', timeout: 30000 });
   await waitForOpenUI(page);
   await page.screenshot({ path: path.join(OUT, 'dashboard-open.png'), fullPage: true });
+  await page.setViewportSize({ width: 375, height: 900 });
+  await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
+  await waitForOpenUI(page);
+  await page.screenshot({ path: path.join(OUT, 'dashboard-mobile.png'), fullPage: true });
   await browser.close();
-  console.log('dashboard-open.png captured (elite open state with fabric)');
+  console.log('dashboard-open.png and dashboard-mobile.png captured (canonical open state)');
 })();

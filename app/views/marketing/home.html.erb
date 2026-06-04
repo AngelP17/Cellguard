@@ -1,7 +1,7 @@
 <%= render Ui::ShellComponent.new(
   title: "CellGuard",
   subtitle: "Deploy decisions backed by live reliability evidence",
-  eyebrow: "CELLGUARD MISSION CONTROL",
+  eyebrow: "CELLGUARD COMMAND CENTER",
   variant: :landing
 ) do %>
 
@@ -16,15 +16,13 @@
         <span class="cg-brand-lockup__mark"></span>
         CellGuard
       </div>
-      <h1 class="cg-exec-hero__title" data-gsap="hero-title">
-        Govern releases with live proof.
-      </h1>
+      <h1 class="cg-exec-hero__title" data-gsap="hero-title">Govern releases with live proof.</h1>
       <p class="cg-exec-hero__lead" data-gsap="hero-subtitle">
         CellGuard turns SLOs, xyOps fabric signals, autonomous agents, and audit records into one release decision system.
       </p>
       <div class="cg-exec-hero__actions" data-gsap="hero-cta">
-        <a href="/dashboard" class="cg-btn cg-btn--primary cg-btn--lg">Open Mission Control</a>
-        <a href="/incidents" class="cg-btn cg-btn--secondary cg-btn--lg">Review Incidents</a>
+        <a href="/dashboard" class="cg-btn cg-btn--primary cg-btn--lg">Open Control</a>
+        <a href="/incidents" class="cg-btn cg-btn--secondary cg-btn--lg">Review Triage</a>
         <a href="/runbooks/gameday" class="cg-btn cg-btn--ghost cg-btn--lg">Game Day Runbook</a>
       </div>
     </div>
@@ -90,7 +88,7 @@
 
     <div class="cg-system-map">
       <article class="cg-system-cell cg-system-cell--wide">
-        <div class="cg-system-cell__label">Mission Control</div>
+        <div class="cg-system-cell__label">Command cockpit</div>
         <h3>Gate state, SLO burn, fabric evidence, agents, and audit trail in one cockpit.</h3>
         <div class="cg-mini-command">
           <span class="<%= gate_open ? 'is-ok' : 'is-danger' %>"><%= gate_code %></span>
@@ -101,13 +99,13 @@
       </article>
 
       <article class="cg-system-cell">
-        <div class="cg-system-cell__label">Executive Demo</div>
+        <div class="cg-system-cell__label">Proof narrative</div>
         <h3>Show why the gate locked, what changed, who acted, and when it recovered.</h3>
         <p>Every screenshot has a visible story: signal, decision, action, proof.</p>
       </article>
 
       <article class="cg-system-cell">
-        <div class="cg-system-cell__label">Incident Command</div>
+        <div class="cg-system-cell__label">Incident triage</div>
         <h3>Classifier context, runbook recommendation, xyOps evidence, SLA impact.</h3>
         <p>Operators can acknowledge, escalate, resolve, or add notes without losing context.</p>
       </article>
